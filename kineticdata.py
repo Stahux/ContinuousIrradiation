@@ -37,7 +37,7 @@ class KineticData:
             if(t_on == None): raise Exception("Please set some t_on value!")
             if(t_off == None): raise Exception("Please set some t_off value!")
             irr_time = np.abs(t_off-t_on)
-            self.data_t = np.linspace(t_on-10, t_off+irr_time*5, num=200)
+            self.data_t = np.linspace(t_on-10, t_off+irr_time*5, num=10000)
             self.data_a = self.data_t * np.nan
             
         #self.light = light #later there should be array of lighevents...
@@ -60,7 +60,15 @@ class KineticData:
         
         self.num = num
         self.zeroed = zeroed #if true, means that before t_on absorbance was set to zero
-            
+          
+    def selectTimes(self, t_min, t_max): #TODO: checl consistency, written fast
+        index_min = np.argmin(np.abs(self.data_t-t_min))
+        index_max = np.argmin(np.abs(self.data_t-t_max))
+        self.data_t = self.data_t[index_min:index_max-1] #check again!
+        self.data_a = self.data_a[index_min:index_max-1]
+        if(self.t_off > self.data_t[-1]):
+            self.t_off = self.data_t[-1]
+    
     def plotYourself(self):
         plt.figure()
         plt.plot(self.data_t, self.data_a, 'bo')

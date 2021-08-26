@@ -740,8 +740,8 @@ class Model:
             out_abs += cs[x] * self.populations[x].epsilon[float(wavelength)]
         return out_abs * length
 
-    def solveModelSingle(self, data): #returns data object with values generated from model. update model with new params if they were obtained from fit
-        
+    def solveModelSingle(self, data, population_num = None): #returns data object with values generated from model. update model with new params if they were obtained from fit
+        # population_num = None will calculate absorbances, but you can give population number to get concentration trace of this population
         initial_conditions = list()
         if(self.psplit == False): #there was major mistake, i corrected, but better check again, because error was really stupid and its late now...
             weighted_epsilons = [(elem.epsilon[data.irradiation] * elem.initial) for elem in self.populations]
@@ -777,19 +777,28 @@ class Model:
             grid1 = data.data_t[:splitpoint1+1]
             y1 = odeint(self.derrivt, initial_conditions, grid1, args=(data.irradiation,data.irradiation_length,0.0)) # by adding hmax specify max step
             initial_conditions = y1[-1]
-            abs1 = [self.absorbance(cse, data.probe_length, data.probe) for cse in y1]
+            if(population_num == None):
+                abs1 = [self.absorbance(cse, data.probe_length, data.probe) for cse in y1]
+            else:
+                abs1 = [cse[population_num] for cse in y1] #mało eleganckie, ale zwykłe y1[:,pop_num] nie dziala...
             abs_out += abs1[:-1]
         
         grid2 = data.data_t[splitpoint1:splitpoint2+1]
         y2 = odeint(self.derrivt, initial_conditions, grid2, args=(data.irradiation,data.irradiation_length,data.intensity)) # by adding hmax specify max step
         initial_conditions = y2[-1]
-        abs2 = [self.absorbance(cse, data.probe_length, data.probe) for cse in y2]
+        if(population_num == None):
+            abs2 = [self.absorbance(cse, data.probe_length, data.probe) for cse in y2]
+        else:
+            abs2 = [cse[population_num] for cse in y2]
         abs_out += abs2
         
         if splitpoint2 != len(data.data_t)-1:
             grid3 = data.data_t[splitpoint2:]
             y3 = odeint(self.derrivt, initial_conditions, grid3, args=(data.irradiation,data.irradiation_length,0.0)) # by adding hmax specify max step
-            abs3 = [self.absorbance(cse, data.probe_length, data.probe) for cse in y3]
+            if(population_num == None):
+                abs3 = [self.absorbance(cse, data.probe_length, data.probe) for cse in y3]
+            else:
+                abs3 = [cse[population_num] for cse in y3]
             abs_out += abs3[1:]
             
         output_data = copy.deepcopy(data)    
@@ -822,7 +831,7 @@ class Model:
                 tmplist.append(self.solveModelSingle(experiment.all_data[i]))
                 plt.plot(experiment.all_data[i].data_t, experiment.all_data[i].data_a, colors[i]+'-',alpha=0.5)
                 plt.plot(tmplist[i].data_t, tmplist[i].data_a, colors[i]+'-', label = "Kinetic " + str(i) + " irr: " + str(experiment.all_data[i].irradiation) + " nm, probe: " + str(experiment.all_data[i].probe) + " nm.")
-                print(str(tmplist[i].data_t[120])+" is "+str(tmplist[i].data_a[120])) #akurat bylo potrzebne, wywal to...
+                #print(str(tmplist[i].data_t[120])+" is "+str(tmplist[i].data_a[120])) #akurat bylo potrzebne, wywal to...
             plt.legend(fontsize="x-small", frameon=False, labelspacing=0.1)
         else:
             if num < experiment.count: # and num < tmp.count #dokoncz!!!!!!!!!!!!
@@ -842,7 +851,27 @@ class Model:
             plt.xlim(right=x_max)             
         plt.show()
     
-
+    def plotConcentrations(self, data, population_nums = [], x_min = None, x_max = None,dpi = 80, title = None):
+        colors = ("b","r","g","c","m","y","C0","C1","C2","C3","C4","C5","C6","C7") * 100  #color order
+        plt.figure(dpi=dpi)
+        
+        for num in population_nums:
+            tmp = self.solveModelSingle(data,num)
+            plt.plot(tmp.data_t, tmp.data_a, colors[num]+'-', label = "Population " + self.populations[num].name)
+        plt.legend(fontsize="x-small", frameon=False, labelspacing=0.1)
+        
+        if title != None:
+            plt.title(title, loc="left", fontsize=16)
+        plt.xlabel('Time (s)',fontsize=16)
+        plt.ylabel('Concentration',fontsize=16)
+        plt.xticks(fontsize=12)
+        plt.yticks(fontsize=12)        
+        if x_min != None:
+            plt.xlim(left=x_min) 
+        if x_max != None:
+            plt.xlim(right=x_max)             
+        plt.show()
+        
     #what it should do:
     #1. there should be function which extract required paremeter from params, if absent then return error
     #1.1. maybe you should check if all params are there at the begining only...
