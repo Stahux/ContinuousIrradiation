@@ -193,6 +193,59 @@ class ModThermal(ModProcess):
         painter.drawLine(p2, p2 + p_arr1)
         painter.drawLine(p2, p2 + p_arr2)
         
+class ModThermalEyring(ModProcess): #extension of ModThermal, where k is not const. but depends on temperature
+    def __init__(self, new_name, pop_source, pop_target):
+        super().__init__(new_name, pop_source, pop_target)
+        #self.k = 0
+        self.type = 'ke'
+        self.kappa = 1 #transmission coefficient, no unit
+        self.deltaH = 10 #enthalpy of activation (with two plusses in the upper index), [kcal/mol]
+        self.deltaS = 0.001 #entropy of activation (with two plusses in the upper index) [kcal/mol/K]
+
+    def getK(self, temperature): #calc rate constant based on params and temp. (absolute not Celcius!!!)
+        R_gas = 0.00198720425864083 #gas constant [kcal/K/mol]
+        h_planck = 6.62607015E-34 #planck [J*s]
+        kb = 1.380649E-23 #boltzmann constant [J/K]
+        return (self.kappa*kb*temperature/h_planck) * np.exp(self.deltaS/R_gas - self.deltaH/(R_gas*temperature))
+
+    def paintYourself(self, painter):
+        p1, p2 = self.getsetLocation()
+        
+        #firstly draw sinusiodal shape indicating nonradiative process
+        fragm_len = 3.0
+        modamp = 5.0 #depth of modulation
+        diff = p2 - p1
+        full_length = math.sqrt(diff.x()*diff.x() + diff.y()*diff.y())
+        iters = math.floor(full_length / fragm_len)
+        unit_vect = diff * fragm_len / full_length #piece of line used to render whole curve
+        if diff.x() >= 0:
+            angle = math.asin(diff.y() / math.sqrt(diff.x()*diff.x() + diff.y()*diff.y()))
+        else:
+            angle = math.pi - math.asin(diff.y() / math.sqrt(diff.x()*diff.x() + diff.y()*diff.y()))
+        perp_vect = QtCore.QPointF(modamp*math.cos(angle+math.pi/2), modamp*math.sin(angle+math.pi/2))
+        
+        path = QtGui.QPainterPath(p1)
+        
+        for i in range(1,iters+1):
+            path.lineTo(p1 + unit_vect * i + perp_vect * math.sin(i * math.pi / iters) * math.sin(i * 1))
+        
+        path.lineTo(p2)
+        painter.drawPath(path)
+            
+        diff = p1 - p2 #potrzebne do zrobienia grota strzalki  
+        if diff.x() >= 0:
+            angle = math.asin(diff.y() / math.sqrt(diff.x()*diff.x() + diff.y()*diff.y()))
+        else:
+            angle = math.pi - math.asin(diff.y() / math.sqrt(diff.x()*diff.x() + diff.y()*diff.y()))
+        
+        angle_diff = math.pi / 10.0 #determines shape of the arrow
+        length = 10.0 #determines shape of the arrow
+        p_arr1 = QtCore.QPointF(length*math.cos(angle+angle_diff), length*math.sin(angle+angle_diff))
+        p_arr2 = QtCore.QPointF(length*math.cos(angle-angle_diff), length*math.sin(angle-angle_diff))
+        
+        painter.drawLine(p2, p2 + p_arr1)
+        painter.drawLine(p2, p2 + p_arr2)        
+        
 class ModRadiative(ModProcess):
     def __init__(self, new_name, pop_source, pop_target):
         super().__init__(new_name, pop_source, pop_target)    
@@ -617,7 +670,10 @@ class Model:
                 params.add(elem.name + '__fi', value=elem.fi, vary=False, min=0, max=1)      #well, theoretically can be > 1, but not in this meaning i think
             elif elem.type == 'k':
                 params.add(elem.name + '__k', value=elem.k, vary=False, min=0)   
-            
+            elif elem.type == 'ke': #temperature-dependent rate constant!
+                params.add(elem.name + '__deltaH', value=elem.deltaH, vary=False, min=0) #negative energy barrier makes no sense
+                params.add(elem.name + '__deltaS', value=elem.deltaS, vary=False) 
+                
         if(self.psplit == False):  
             max_initial = 0.0    #check if soeme initial populations are determined if no, then do it yourself
             for elem in self.populations:    
@@ -663,7 +719,10 @@ class Model:
             if elem.type == 'fi':
                 elem.fi = p[elem.name + '__fi']    
             elif elem.type == 'k':
-                elem.k = p[elem.name + '__k']           
+                elem.k = p[elem.name + '__k']     
+            elif elem.type == 'ke': #temperature-dependent rate constant!
+                elem.deltaH = p[elem.name + '__deltaH'] #negative energy barrier makes no sense
+                elem.deltaS = p[elem.name + '__deltaS'] 
         
     def checkParams(self, experiment): #run tests if params are correctly set. experiment object is to validiate its compatibility with model
         result = True                  #it should be run after updataParameers for both model and experiment, and assume that funcs loaded them correctly
