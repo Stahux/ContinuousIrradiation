@@ -14,7 +14,7 @@ class LightEvent: #designates light distribution starting from some moment to th
         
 
 class KineticData:
-    def __init__(self, filename, probe, irradiation, intensity = 0.0, absorbance = 0.0, t_on = None, t_off = None, probe_length = 1, irradiation_length = 1, num = None, zeroed = False, src = None):    
+    def __init__(self, filename, probe, irradiation, intensity = 0.0, absorbance = 0.0, t_on = None, t_off = None, probe_length = 1, irradiation_length = 1, num = None, zeroed = False, src = None, temperature = None):    
         
         if(src == None):
             #inport data
@@ -44,6 +44,7 @@ class KineticData:
         self.probe = probe #probing wavelength
         self.irradiation = irradiation
         self.intensity = intensity
+        self.temperature = temperature
         self.absorbance = absorbance #lets say for now that it is absorbance at irradiation wavelength in the ground state
         if t_on == None:
             self.t_on = self.data_t[0]
@@ -88,6 +89,7 @@ class KineticData:
         params.add(numstring+'probe_length', value=self.probe_length, vary=False, min=0) 
         params.add(numstring+'irradiation_length', value=self.irradiation_length, vary=False, min=0) 
         params.add(numstring+'absorbance', value=self.absorbance, vary=False, min=0) 
+        params.add(numstring+'temperature', value=self.temperature, vary=False, min=0) 
         return params
     
     def updateParameters(self, params):
@@ -103,6 +105,7 @@ class KineticData:
         self.probe_length = p[numstring+'probe_length']
         self.irradiation_length = p[numstring+'irradiation_length']
         self.absorbance = p[numstring+'absorbance']
+        self.temperature = p[numstring+'temperature']
   
     def gaussExp(self, t, A, tau):
         eksp = np.exp(-t/tau)
@@ -173,8 +176,8 @@ class Experiment: #container for kineticdata or other future data types prepared
         self.all_data = list()
         self.count = 0
         
-    def loadKineticData(self, filename, probe, irradiation, intensity = 0.0, absorbance = 0.0, t_on = None, t_off = None, probe_length = 1, irradiation_length = 1, zeroed = False, src = None):
-        newdata = KineticData(filename, probe, irradiation, intensity, absorbance, t_on, t_off, probe_length, irradiation_length, self.count, zeroed, src = src)
+    def loadKineticData(self, filename, probe, irradiation, intensity = 0.0, absorbance = 0.0, t_on = None, t_off = None, probe_length = 1, irradiation_length = 1, zeroed = False, src = None, temperature = None):
+        newdata = KineticData(filename, probe, irradiation, intensity, absorbance, t_on, t_off, probe_length, irradiation_length, self.count, zeroed, src = src, temperature = temperature)
         self.all_data.append(newdata)
         self.count += 1
         

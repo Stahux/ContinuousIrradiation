@@ -196,7 +196,7 @@ class ModThermal(ModProcess):
 class ModThermalEyring(ModProcess): #extension of ModThermal, where k is not const. but depends on temperature
     def __init__(self, new_name, pop_source, pop_target):
         super().__init__(new_name, pop_source, pop_target)
-        #self.k = 0
+        self.k = None #is recalculated after calling getK()
         self.type = 'ke'
         self.kappa = 1 #transmission coefficient, no unit
         self.deltaH = 10 #enthalpy of activation (with two plusses in the upper index), [kcal/mol]
@@ -206,7 +206,8 @@ class ModThermalEyring(ModProcess): #extension of ModThermal, where k is not con
         R_gas = 0.00198720425864083 #gas constant [kcal/K/mol]
         h_planck = 6.62607015E-34 #planck [J*s]
         kb = 1.380649E-23 #boltzmann constant [J/K]
-        return (self.kappa*kb*temperature/h_planck) * np.exp(self.deltaS/R_gas - self.deltaH/(R_gas*temperature))
+        self.k = (self.kappa*kb*temperature/h_planck) * np.exp(self.deltaS/R_gas - self.deltaH/(R_gas*temperature))
+        return self.k
 
     def paintYourself(self, painter):
         p1, p2 = self.getsetLocation()
@@ -671,7 +672,7 @@ class Model:
             elif elem.type == 'k':
                 params.add(elem.name + '__k', value=elem.k, vary=False, min=0)   
             elif elem.type == 'ke': #temperature-dependent rate constant!
-                params.add(elem.name + '__deltaH', value=elem.deltaH, vary=False, min=0) #negative energy barrier makes no sense
+                params.add(elem.name + '__deltaH', value=elem.deltaH, vary=False) #negative energy barrier makes no sense, but may happen from data noise
                 params.add(elem.name + '__deltaS', value=elem.deltaS, vary=False) 
                 
         if(self.psplit == False):  
@@ -787,6 +788,8 @@ class Model:
                     cont = cs[self.populations.index(arr.source)]
                 if arr.type == 'k':
                     cont *= arr.k
+                elif arr.type == 'ke':
+                    cont *= arr.k #remember to caculta it before otherwise result will be incorrect
                 elif arr.type == 'fi':
                     cont *= arr.fi * Ftmp * intensity * arr.source.epsilon[irradiation] * length 
                 ct += cont
@@ -832,6 +835,10 @@ class Model:
             
         abs_out = list()    
             
+        for arr in self.processes:
+            if(arr.type == 'ke'):
+                arr.getK(data.temperature) #update temperature for temperature dependent process
+        
         if splitpoint1 != 0:
             grid1 = data.data_t[:splitpoint1+1]
             y1 = odeint(self.derrivt, initial_conditions, grid1, args=(data.irradiation,data.irradiation_length,0.0)) # by adding hmax specify max step
