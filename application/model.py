@@ -49,9 +49,17 @@ class ModPopulation:
             raise Exception('Attempted to invalid population removal!!')
         n = model.populations.index(self)
         model.populations.pop(n)
+        
+    def countProcesses(self, second_population): #gives numer of the existing arrows between populations
+        arrows = 0
+        for arr in self.arrows:
+            if( ( arr.source is self and arr.target is second_population ) or ( arr.source is second_population and arr.target is self ) ):
+                arrows += 1
+        return arrows        
 
 class ModProcess:
     def __init__(self, new_name, pop_source, pop_target):
+        arrow_count = pop_source.countProcesses(pop_target) #check how many parallel arrows already there
         self.name = new_name #name of the process
         self.source = pop_source #initialize yourself with both neighbour populations
         self.target = pop_target
@@ -60,7 +68,7 @@ class ModProcess:
         self.p1 = QtCore.QPoint()
         self.p2 = QtCore.QPoint()
         self.type = ''
-        self.number = 1 #number of arrow between some pair of populations.numbering halps to render arrows separately
+        self.number = arrow_count + 1 #number of arrow between some pair of populations.numbering halps to render arrows separately
         self.displacement = 14 #separation distance between arrows
         self.dist_treshold = 7 #if distance from point to crossing point is below treshold function cotains return true hehehe
     
@@ -417,13 +425,6 @@ class ModelWindow(QWidget):
         if found == False and len(self.text5.text()) > 0:
             self.process_adding = True
             self.repaint()
-            
-    def countArrows(self, population1, population2): #gives numer of the existing arrows between populations, and True if some k arrow already exist
-        arrows = 0
-        for arr in population1.arrows:
-            if( ( arr.source is population1 and arr.target is population2 ) or ( arr.source is population2 and arr.target is population1 ) ):
-                arrows += 1
-        return arrows
         
     def isStrNumber(self,s):
         try:
@@ -545,12 +546,10 @@ class ModelWindow(QWidget):
                 if found == False:
                     self.process_adding = False
                 else: #finalize arrow from  self.process_adding to found
-                    arrow_count = self.countArrows(self.process_adding, found)
                     if self.select_process.currentIndex() == 0: # Thermal
                         tmp_arrow = ModThermal(self.text5.text(), self.process_adding, found)
                     elif self.select_process.currentIndex() == 1: # Light activated
                         tmp_arrow = ModRadiative(self.text5.text(), self.process_adding, found) #asumes, that there are only 2 kinds of arrows, which can be added
-                    tmp_arrow.number = arrow_count + 1
                     self.model.addProcess(tmp_arrow)
                     self.text5.setText('')     
                     self.process_adding = False
@@ -608,11 +607,35 @@ class Model:
         
     def addProcess(self, new_process):
         self.processes.append(new_process)
+        
+    def countProcesses(self, population1, population2): #gives numer of the existing arrows between populations
+        arrows = 0
+        for arr in population1.arrows:
+            if( ( arr.source is population1 and arr.target is population2 ) or ( arr.source is population2 and arr.target is population1 ) ):
+                arrows += 1
+        return arrows        
 
     def manualModelBuild(self):
         app = QApplication(sys.argv)
         ex = ModelWindow(self)
         app.exec_()
+        
+    def turnKsIntoEyrings(self): #simple helper func to replace constant k thermal arrows with Ering ones
+        new_processes = list()
+        
+        for arr in self.processes:
+            if(arr.type == 'k'):
+                old_name = arr.name
+                source = arr.source
+                target = arr.target
+                arr.remove(self)
+                
+                tmp_arrow = ModThermalEyring(old_name, source, target)
+                self.model.addProcess(tmp_arrow)                
+            else:
+                new_processes.append(arr)
+                
+        self.processes = new_processes
         
     def save(self, filename):
         with open(filename, "wb") as f:
