@@ -621,8 +621,6 @@ class Model:
         app.exec_()
         
     def turnKsIntoEyrings(self): #simple helper func to replace constant k thermal arrows with Ering ones
-        new_processes = list()
-        
         for arr in self.processes:
             if(arr.type == 'k'):
                 old_name = arr.name
@@ -631,11 +629,7 @@ class Model:
                 arr.remove(self)
                 
                 tmp_arrow = ModThermalEyring(old_name, source, target)
-                self.model.addProcess(tmp_arrow)                
-            else:
-                new_processes.append(arr)
-                
-        self.processes = new_processes
+                self.addProcess(tmp_arrow) 
         
     def save(self, filename):
         with open(filename, "wb") as f:
@@ -668,7 +662,7 @@ class Model:
         for elem in self.populations: #somehow initial conditions also depend on model (their structure), however they are not directly determined by model 
             is_sourcethermstate = False
             for arr in elem.arrows:
-                if arr.source is elem and arr.type == 'k':
+                if arr.source is elem and ( arr.type == 'k' or arr.type == 'ke'):
                     is_sourcethermstate = True
             if is_sourcethermstate == True:
                 elem.initial = 0.0
