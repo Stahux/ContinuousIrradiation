@@ -15,7 +15,7 @@ class LightEvent: #designates light distribution starting from some moment to th
 
 class KineticData:
     def __init__(self, filename, probe, irradiation, intensity = 0.0, absorbance = 0.0, t_on = None, t_off = None, probe_length = 1, irradiation_length = 1, num = None, zeroed = False, src = None, temperature = None):    
-        
+        #self.data = np.genfromtxt(filename, skip_header=0, dtype=float, invalid_raise = False)
         if(src == None):
             #inport data
             data = np.loadtxt(filename)
@@ -176,8 +176,8 @@ class Experiment: #container for kineticdata or other future data types prepared
         self.all_data = list()
         self.count = 0
         
-    def loadKineticData(self, filename, probe, irradiation, intensity = 0.0, absorbance = 0.0, t_on = None, t_off = None, probe_length = 1, irradiation_length = 1, zeroed = False, src = None, temperature = None):
-        newdata = KineticData(filename, probe, irradiation, intensity, absorbance, t_on, t_off, probe_length, irradiation_length, self.count, zeroed, src = src, temperature = temperature)
+    def loadKineticData(self, *args, **kwargs):
+        newdata = KineticData(*args, num = self.count, **kwargs)
         self.all_data.append(newdata)
         self.count += 1
         
