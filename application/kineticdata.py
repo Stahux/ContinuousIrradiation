@@ -14,11 +14,11 @@ class LightEvent: #designates light distribution starting from some moment to th
         
 
 class KineticData:
-    def __init__(self, filename, probe, irradiation, intensity = 0.0, absorbance = 0.0, t_on = None, t_off = None, probe_length = 1, irradiation_length = 1, num = None, zeroed = False, src = None, temperature = None):    
-        #self.data = np.genfromtxt(filename, skip_header=0, dtype=float, invalid_raise = False)
+    def __init__(self, filename, probe, irradiation, intensity = 0.0, absorbance = 0.0, t_on = None, t_off = None, probe_length = 1, irradiation_length = 1, num = None, zeroed = False, src = None, skip_header = 0, skip_footer = 0, temperature = None):    
         if(src == None):
             #inport data
-            data = np.loadtxt(filename)
+            #data = np.loadtxt(filename) #previously used
+            data = np.genfromtxt(filename, skip_header=skip_header, skip_footer=skip_footer, dtype=float, invalid_raise = False)
             self.data_t = data[:,0]
             self.data_a = data[:,1]
         elif(src == "Lucas"):    #read data of meine beste freunde lucasso  !
