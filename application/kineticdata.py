@@ -210,4 +210,11 @@ class Experiment: #container for kineticdata or other future data types prepared
     def linearBaselineCorrect(self, exp_no):
         for i in range(self.count):
             self.all_data[i].linearBaselineCorrect(exp_no)
-
+            
+    def __getitem__(self, i):
+        return self.all_data[i]
+    
+    #def __setitem__
+    #def __getslice__
+    #def __setslice__
+    #def __delslice__

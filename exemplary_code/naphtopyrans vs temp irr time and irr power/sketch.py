@@ -9,7 +9,7 @@ from model import Model
 from kineticdata import KineticData, Experiment
 from modfit import ModFit
 import copy
-
+import lmfit
 
 
 model1 = Model.load('model_ABC_singlephoton.model')
@@ -75,14 +75,50 @@ model1.setInitial("C",0)
 def fitModel():
     params1 = experiment1.genParameters() + model1.genParameters()
     
+    params1.pretty_print()
+    
+    params1['fi1__fi'].set(vary=True)
+    params1['fi2__fi'].set(vary=True)
+    params1['fi3__fi'].set(vary=True)
+    params1['fi4__fi'].set(vary=True)
+    params1['fisingle__fi'].set(vary=True)
+    params1['k1__k'].set(vary=True)  
+    
     experiment1.updateParameters(params1)
     model1.updateParameters(params1)
     
     #for i in range(0,4):
      #   test1.plotYourself(data1, i, title="Kinetic " + str(i))
         
-    model1.plotYourself(experiment1,dpi=160,x_min=-10, x_max=200)
+    #model1.plotYourself(experiment1,dpi=160,x_min=-10, x_max=200)
     #print(params1)
 
+
+    #out_data = model1.solveModel(experiment1)
+
+    #model1.plotYourself(experiment1, x_max = 200)
+    #model1.plotYourself(out_data, x_max = 200)
+    
+    modfit1 = ModFit(model1, experiment1, params1)
+    out1 = modfit1.fit()
+    params2 = out1.params    
+    
+    experiment1.updateParameters(params2)
+    model1.updateParameters(params2)
+    
+    for i in range(10):
+        model1.plotYourself(experiment1, i)
+    model1.plotYourself(experiment1)
+    
+    lmfit.report_fit(params2)    
     
 fitModel()
+
+
+
+
+
+
+
+
+

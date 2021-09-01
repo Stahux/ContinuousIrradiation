@@ -635,7 +635,8 @@ class Model:
         with open(filename, "wb") as f:
             pickle.dump(self, f, pickle.HIGHEST_PROTOCOL)
         
-    def load(filename): #this is static method intentionally
+    @staticmethod
+    def load(filename):
         with open(filename, "rb") as f:
             loaded = pickle.load(f)
         return loaded
@@ -904,7 +905,7 @@ class Model:
             return_experiment.addKineticData(new_data)
         return return_experiment
     
-    def plotYourself(self, experiment, num = None, x_min = None, x_max = None,dpi = 80, title = None):
+    def plotYourself(self, experiment, num = None, x_min = None, x_max = None,dpi = 120, title = None):
         colors = ("b","r","g","c","m","y","C0","C1","C2","C3","C4","C5","C6","C7") * 100  #color order
         plt.figure(dpi=dpi)
         
