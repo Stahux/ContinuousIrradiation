@@ -27,8 +27,8 @@ class ModFit(lmfit.Minimizer):
         return res_vect
     
   
-    def fit(self, params = None, method='leastsq'):
-        output = self.minimize(method, params)
+    def fit(self, params = None, **kwargs):
+        output = self.minimize(params = params, **kwargs)
         
         return output
         
