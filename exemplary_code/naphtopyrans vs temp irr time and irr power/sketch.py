@@ -97,9 +97,10 @@ def fitModel():
     params1['_8_intensity'].set(expr="mw_to_intensity * 3.2")
     params1['_9_intensity'].set(expr="mw_to_intensity * 3.2")
 
+    params1.pretty_print()
     
     modfit1 = ModFit(model1, experiment1, params1)
-    out1 = modfit1.fit(maxfev = 1000)
+    out1 = modfit1.fit(maxfev = 10000)
     params2 = out1.params    
     
     experiment1.updateParameters(params2)
