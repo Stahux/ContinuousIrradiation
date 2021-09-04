@@ -83,7 +83,11 @@ def fitModel():
     params1['k1__deltaH'].set(vary=True, value=23)  
     params1['k1__deltaS'].set(vary=True, value=0.01) 
 
-    params1.add("mw_to_intensity", vary = True, value = 4e-06)
+    mJ_per_hv = 5.44231976708963E-019*1000 #one 365nm photon [mJ]
+    avogadro = 6.022140857E+023
+    mw_to_intensity = ((1*1.5)/(3.14*(1/2)**2))*1000/(1*1.5*1*mJ_per_hv*avogadro)
+    
+    params1.add("mw_to_intensity", vary = False, value = mw_to_intensity)
     
     #relations between irradiation powers are known
     params1['_0_intensity'].set(expr="mw_to_intensity * 3.2")
@@ -95,7 +99,7 @@ def fitModel():
     params1['_6_intensity'].set(expr="mw_to_intensity * 3.2")
     params1['_7_intensity'].set(expr="mw_to_intensity * 3.2")
     params1['_8_intensity'].set(expr="mw_to_intensity * 3.2")
-    params1['_9_intensity'].set(expr="mw_to_intensity * 3.2")
+    params1['_9_intensity'].set(expr="mw_to_intensity * 3.2") 
 
     params1.pretty_print()
     
