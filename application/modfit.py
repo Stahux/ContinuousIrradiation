@@ -82,15 +82,15 @@ class MParameters(lmfit.Parameters):
         return self
 
 class MParameter(lmfit.Parameter):
-    def __init__(self, *args, penalty_std = None, penalty_scale = 1, **kwargs):
+    def __init__(self, *args, penalty_std = None, penalty_weight = 1, **kwargs):
         super().__init__(*args, **kwargs)
-        self.user_data = (penalty_std, penalty_scale, None)
+        self.user_data = (penalty_std, penalty_weight, None)
     
-    def set(self, *args, penalty_std = None, penalty_scale = None, **kwargs):
+    def set(self, *args, penalty_std = None, penalty_weight = None, **kwargs):
         if penalty_std is not None:
             self.penalty_std = penalty_std
-        if penalty_scale is not None:
-            self.penalty_scale = penalty_scale
+        if penalty_weight is not None:
+            self.penalty_weight = penalty_weight
         super().set(*args, **kwargs)
 
     @property
@@ -105,16 +105,27 @@ class MParameter(lmfit.Parameter):
         self.user_data = (val, self.user_data[1], self.user_data[2])
 
     @property
-    def penalty_scale(self):
+    def penalty_weight(self):
         return self.user_data[1]
 
-    @penalty_scale.setter
-    def penalty_scale(self, val):
+    @penalty_weight.setter
+    def penalty_weight(self, val):
         if val is not None: 
             if(val <= 0):
-                raise Exception("Error! penalty_scale cannot be negative or zero!")
+                raise Exception("Error! penalty_weight cannot be negative or zero!")
         self.user_data = (self.user_data[0], val, self.user_data[2])
 
+    @property
+    def penalty_expected_value(self): #only getter
+        return self.user_data[2]
+
+    @property
+    def penalty_enabled(self): #True if penalty enabled
+        if(self.penalty_std is not None):
+            return True
+        else:
+            return False
+            
 
 class ModFit(lmfit.Minimizer):    
     def __init__(self, model, experiment, params = None):
@@ -139,14 +150,33 @@ class ModFit(lmfit.Minimizer):
         return weight/ModFit.normalDistribution(value, expected, error)
     
     def residual(self, params):
+        """
+        TODO:
+            1) parallel calc residues for all kineticdata
+            2) you can precompile model to avoid building equations every time
+            3) preallocate residual vector, not extend
+            4) ... probably more things
+        """
         self.model.updateParameters(params)
         self.experiment.updateParameters(params)
         
-        
         modelled_experiment = self.model.solveModel(self.experiment)
-        res_vect = list()
+        
+        res_vect = list() #here huge optimization obviously can be made
+        
         for i in range(modelled_experiment.count):
             res_vect.extend(modelled_experiment.all_data[i].data_a - self.experiment.all_data[i].data_a)
+        
+        penalties = []
+        for key, param in params.items():
+            if(isinstance(param, MParameter)):
+                if(param.penalty_enabled):
+                    penalties.append(ModFit.normalPenalty(param.value, 
+                          param.penalty_expected_value, 
+                          param.penalty_std, 
+                          param.penalty_weight))
+        res_vect.extend(penalties)
+            
         return res_vect
     
     def initPenalty(self, params): #just set third val in user_data to expected value
