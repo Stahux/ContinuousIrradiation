@@ -193,10 +193,25 @@ class ModFit(lmfit.Minimizer):
         output = self.minimize(params = params, **kwargs)
         
         return output
+    
+    def report_fit(self, params):
+        lmfit.report_fit(params) 
+        
+        for key, param in params.items():
+            if(isinstance(param, MParameter)):
+                if(param.penalty_enabled):
+                    penalty_tmp = ModFit.normalPenalty(param.value, 
+                          param.penalty_expected_value, 
+                          param.penalty_std, 
+                          param.penalty_weight) 
+                    deviation = 100*abs(param.penalty_expected_value-param.value)/param.penalty_expected_value
+                    sigmas = (param.value-param.penalty_expected_value)/param.penalty_std
+                    print("For param: " + key + " there is penalty %.9f, due to %.1f%% deviation from expected value (%.1f\u03c3)." % (penalty_tmp, deviation, sigmas))
+
+        #print total penalty and chi2
         
         
-        
-        
+
 #how it should work?
 #firstly you build model, data objects
 #then you generate parameters from them, and unfix some of them before fit
@@ -205,3 +220,4 @@ class ModFit(lmfit.Minimizer):
 #so preferably you shuld build object with all three objects
 #later eventually replace parameter object, or build function to do it from outside
 #still try to stick to the original Minimizer architecture, apply minimal modifications...
+        
