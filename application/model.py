@@ -5,7 +5,6 @@
 import numpy as np
 from scipy.integrate import odeint
 import matplotlib.pyplot as plt
-import lmfit
 import sys
 import keyword
 import copy
@@ -13,7 +12,8 @@ import math
 import pickle
 from PyQt5.QtWidgets import QApplication, QWidget
 from PyQt5 import QtCore, QtGui, QtWidgets, Qt
-from kineticdata import Experiment 
+from kineticdata import Experiment
+from modfit import MParameter, MParameters
 
 #firstly create populations and put them i model
 #then add arrows. Create arrow binded by two populations and add to model list
@@ -678,20 +678,20 @@ class Model:
             raise Exception('Cannot determine ground state of the model! Change model, or set initial conditions manually (setInitial() function)!')
     
     def genParameters(self): #parameters are fixed by default, unfix some of them before fitting procedure
-        params = lmfit.Parameters()
+        params = MParameters()
         
         for elem in self.populations:
             for l, eps in elem.epsilon.items():
-                params.add(elem.name + '__' + str(l).replace('.','_'), value=eps, vary=False)
+                params.add(MParameter(elem.name + '__' + str(l).replace('.','_'), value=eps, vary=False))
             
         for elem in self.processes:
             if elem.type == 'fi':
-                params.add(elem.name + '__fi', value=elem.fi, vary=False, min=0, max=1)      #well, theoretically can be > 1, but not in this meaning i think
+                params.add(MParameter(elem.name + '__fi', value=elem.fi, vary=False, min=0, max=1))      #well, theoretically can be > 1, but not in this meaning i think
             elif elem.type == 'k':
-                params.add(elem.name + '__k', value=elem.k, vary=False, min=0)   
+                params.add(MParameter(elem.name + '__k', value=elem.k, vary=False, min=0))   
             elif elem.type == 'ke': #temperature-dependent rate constant!
-                params.add(elem.name + '__deltaH', value=elem.deltaH, vary=False) #negative energy barrier makes no sense, but may happen from data noise
-                params.add(elem.name + '__deltaS', value=elem.deltaS, vary=False) 
+                params.add(MParameter(elem.name + '__deltaH', value=elem.deltaH, vary=False)) #negative energy barrier makes no sense, but may happen from data noise
+                params.add(MParameter(elem.name + '__deltaS', value=elem.deltaS, vary=False)) 
                 
         if(self.psplit == False):  
             max_initial = 0.0    #check if soeme initial populations are determined if no, then do it yourself
@@ -703,7 +703,7 @@ class Model:
                 self.configureInitial()
                 
             for elem in self.populations: #somehow initial conditions also depend on model, however they are not directly determined by model 
-                params.add(elem.name, value=elem.initial, vary=False, min=0, max=1) #initialize only 'ground states' as initial states
+                params.add(MParameter(elem.name, value=elem.initial, vary=False, min=0, max=1)) #initialize only 'ground states' as initial states
             
             
         else: #if there is multi initial populations mode (self.psplit == true), check if all vectors are the same, they must be the same
@@ -717,7 +717,7 @@ class Model:
             
             for elem in self.populations:
                 for num in range(len(elem.initial)):
-                    params.add('_' + str(num) + '_' + elem.name, value=elem.initial[num], vary=False, min=0, max=1) #initialize only 'ground states' as initial states
+                    params.add(MParameter('_' + str(num) + '_' + elem.name, value=elem.initial[num], vary=False, min=0, max=1)) #initialize only 'ground states' as initial states
             
         return params
         

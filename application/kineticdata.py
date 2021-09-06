@@ -1,8 +1,8 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import lmfit
 import copy
+from modfit import MParameter, MParameters
 
 
 class LightEvent: #designates light distribution starting from some moment to the next lightevent
@@ -77,19 +77,19 @@ class KineticData:
         plt.show()        
 
     def genParameters(self): #parameters are fixed by default, unfix some of them before fitting procedure
-        params = lmfit.Parameters()
+        params = MParameters()
         numstring = ''
         if self.num != None:
             numstring = '_' + str(self.num) + '_'
-        params.add(numstring+'probe', value=float(self.probe), vary=False, min=0)
-        params.add(numstring+'irradiation', value=float(self.irradiation), vary=False, min=0) 
-        params.add(numstring+'intensity', value=self.intensity, vary=False, min=0) 
-        params.add(numstring+'t_on', value=self.t_on, vary=False)
-        params.add(numstring+'t_off', value=self.t_off, vary=False)
-        params.add(numstring+'probe_length', value=self.probe_length, vary=False, min=0) 
-        params.add(numstring+'irradiation_length', value=self.irradiation_length, vary=False, min=0) 
-        params.add(numstring+'absorbance', value=self.absorbance, vary=False, min=0) 
-        params.add(numstring+'temperature', value=self.temperature, vary=False, min=0) 
+        params.add(MParameter(numstring+'probe', value=float(self.probe), vary=False, min=0))
+        params.add(MParameter(numstring+'irradiation', value=float(self.irradiation), vary=False, min=0))
+        params.add(MParameter(numstring+'intensity', value=self.intensity, vary=False, min=0))
+        params.add(MParameter(numstring+'t_on', value=self.t_on, vary=False))
+        params.add(MParameter(numstring+'t_off', value=self.t_off, vary=False))
+        params.add(MParameter(numstring+'probe_length', value=self.probe_length, vary=False, min=0))
+        params.add(MParameter(numstring+'irradiation_length', value=self.irradiation_length, vary=False, min=0)) 
+        params.add(MParameter(numstring+'absorbance', value=self.absorbance, vary=False, min=0))
+        params.add(MParameter(numstring+'temperature', value=self.temperature, vary=False, min=0)) 
         return params
     
     def updateParameters(self, params):
@@ -187,7 +187,7 @@ class Experiment: #container for kineticdata or other future data types prepared
         self.count += 1
         
     def genParameters(self):
-        generated_params = lmfit.Parameters()
+        generated_params = MParameters()
         for i in range(self.count):
             generated_params += self.all_data[i].genParameters()
         return generated_params
