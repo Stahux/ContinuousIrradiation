@@ -115,7 +115,7 @@ def fitModel():
         model1.plotYourself(experiment1, i, x_max=200)
     model1.plotYourself(experiment1, x_max=200)
     
-    modfit1.report_fit(params2)    
+    modfit1.reportFit(params2)    
     
 fitModel()
 

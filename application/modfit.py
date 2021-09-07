@@ -81,6 +81,10 @@ class MParameters(lmfit.Parameters):
         self.__setstate__(state)
         return self
 
+"""
+Now one can use old Parameter from lmfit or MParameter, which allows
+additionally to specify penalty for the parameter when going outside the std.
+"""
 class MParameter(lmfit.Parameter):
     def __init__(self, *args, penalty_std = None, penalty_weight = 1, **kwargs):
         super().__init__(*args, **kwargs)
@@ -129,12 +133,39 @@ class MParameter(lmfit.Parameter):
 
 class ModFit(lmfit.Minimizer):    
     def __init__(self, model, experiment, params = None):
+        
+        """
+        This class is extenson to lmfit.Mizimizer, but specialized in solving
+        kinetic models of fotochemical reactions.
+        Init ModFit object, with the data to be fitted and the model to be
+        applied. Parameters need to be generated from the model and the data,
+        then merged and modified by the user accordingly to his fitting strategy.
+        One can feed these params here or later just before the fit.
+        ModFit will build residual function from above inpust, and feed it
+        to the lmfit package.
+        
+        Parameters
+        ----------
+        model : Model object (generated from this package, not lmfit one)
+            Kinetic model which will be applied to the data.
+        experiment : Experiment object
+            Set of kinetic traces with specified experimental conditions,
+            meant to be modelled together, using model specified.
+        params : Parameters (from lmfit) or MParameters object
+            Parameters generated from model and experiment, and adjusted by
+            the user. They can be feed later just before the fit. If not
+            specified at any point, ModFit will generate default ones automatically.
+
+        """        
+        
         if(params != None): 
             params = self.initPenalty(params)
             
         if params == None:
             model.genParameters()
-            super().__init__(self.residual, model.genParameters() + experiment.genParameters(), nan_policy='propagate')  
+            super().__init__(self.residual, 
+                 model.genParameters() + experiment.genParameters(), 
+                 nan_policy='propagate')  
         else:
             super().__init__(self.residual, params, nan_policy='propagate')  
           
@@ -187,14 +218,38 @@ class ModFit(lmfit.Minimizer):
         return params
         
   
-    def fit(self, params = None, **kwargs):
+    def fit(self, params = None, **kwargs): 
+        """
+        Print fit report, just like in lmfit but with some additional info.
+        
+        Parameters
+        ----------
+        params : Parameters or MParameters
+            Parameters consistent with used model and datasets (generated from
+            them plus additional ones specified by user may appear. They should
+            provide nice starting point por optimization and resaonable constraints.
+            
+        Returns
+        -------
+        MinimizerResult
+            Object with fit-results returned by lmfit.
+        """            
         if(params != None): 
             params = self.initPenalty(params)
         output = self.minimize(params = params, **kwargs)
         
         return output
     
-    def report_fit(self, params):
+    def reportFit(self, params):
+        """
+        Print fit report, just like in lmfit but with some additional info.
+        
+        Parameters
+        ----------
+        params : Parameters or MParameters
+            Parameters obtained from the last optiumization.
+            
+        """
         lmfit.report_fit(params) 
         
         for key, param in params.items():
@@ -206,7 +261,9 @@ class ModFit(lmfit.Minimizer):
                           param.penalty_weight) 
                     deviation = 100*abs(param.penalty_expected_value-param.value)/param.penalty_expected_value
                     sigmas = (param.value-param.penalty_expected_value)/param.penalty_std
-                    print("For param: " + key + " there is penalty %.9f, due to %.1f%% deviation from expected value (%.1f\u03c3)." % (penalty_tmp, deviation, sigmas))
+                    print("For param: " + key + " there is penalty %.9f, due "
+                          "to %.1f%% deviation from expected value (%.1f\u03c3)." 
+                          % (penalty_tmp, deviation, sigmas))
 
         #print total penalty and chi2
         
