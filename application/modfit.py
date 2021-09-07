@@ -2,6 +2,7 @@
 Contains classes based on lmfit ones, extending their
 functionality for the purpose of this package.
 """
+__version__ = "v0.2"
 __authors__ = ["Stanisław Niziński"]
 #__authors__.append("Add yourself my friend...")
 
@@ -98,9 +99,9 @@ class MParameter(lmfit.Parameter):
         self.user_data = (penalty_std, penalty_weight, None)
     
     def set(self, *args, penalty_std = None, penalty_weight = None, **kwargs):
-        if penalty_std is not None:
+        if(penalty_std is not None):
             self.penalty_std = penalty_std
-        if penalty_weight is not None:
+        if(penalty_weight is not None):
             self.penalty_weight = penalty_weight
         super().set(*args, **kwargs)
 
@@ -110,7 +111,7 @@ class MParameter(lmfit.Parameter):
 
     @penalty_std.setter
     def penalty_std(self, val):
-        if val is not None: 
+        if(val is not None): 
             if(val <= 0):
                 raise Exception("Error! penalty_std cannot be negative or zero!")
         self.user_data = (val, self.user_data[1], self.user_data[2])
@@ -121,7 +122,7 @@ class MParameter(lmfit.Parameter):
 
     @penalty_weight.setter
     def penalty_weight(self, val):
-        if val is not None: 
+        if(val is not None): 
             if(val <= 0):
                 raise Exception("Error! penalty_weight cannot be negative or zero!")
         self.user_data = (self.user_data[0], val, self.user_data[2])
@@ -165,10 +166,10 @@ class ModFit(lmfit.Minimizer):
 
         """        
         
-        if(params != None): 
+        if(params is not None): 
             params = self.initPenalty(params)
             
-        if params == None:
+        if(params is None):
             model.genParameters()
             super().__init__(self.residual, 
                  model.genParameters() + experiment.genParameters(), 
@@ -241,7 +242,7 @@ class ModFit(lmfit.Minimizer):
         MinimizerResult
             Object with fit-results returned by lmfit.
         """            
-        if(params != None): 
+        if(params is not None): 
             params = self.initPenalty(params)
         output = self.minimize(params = params, **kwargs)
         
@@ -268,7 +269,7 @@ class ModFit(lmfit.Minimizer):
                           param.penalty_weight) 
                     deviation = 100*abs(param.penalty_expected_value-param.value)/param.penalty_expected_value
                     sigmas = (param.value-param.penalty_expected_value)/param.penalty_std
-                    print("For param: " + key + " there is penalty %.9f, due "
+                    print("For param: " + key + " penalty equals %.9f, due "
                           "to %.1f%% deviation from expected value (%.1f\u03c3)." 
                           % (penalty_tmp, deviation, sigmas))
 

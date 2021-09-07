@@ -3,6 +3,7 @@ Implements Model class, which intention is similar to lmfit.Model.
 However, this Model class is built separately from the scratch and
 applies only to ModFit (has nothing to do with lmfit.Minimizer).
 """
+__version__ = "v0.2"
 __authors__ = ["Stanisław Niziński"]
 #__authors__.append("Add yourself my friend...")
 
@@ -515,7 +516,7 @@ class ModelWindow(QWidget):
         painter.end()
         
     def eventFilter(self, obj, event):
-        
+        #TODO: change and check type to isinstance!
         if event.type() == QtCore.QEvent.MouseMove:
             mouse_position = event.pos()
             if self.mousepressed != False:
@@ -646,9 +647,9 @@ class Model:
         return loaded
         
     def setInitial(self, name, value): #set some initial population/s manually
-        if(type(value) == list or type(value) == np.ndarray): #if you give value as array there will be differnt initial populations for each kinetic
+        if(isinstance(value,list) or isinstance(value,np.ndarray)): #if you give value as array there will be differnt initial populations for each kinetic
             self.psplit = True                                #however in this case number of kinetics must match number of values in array
-        elif(type(value) == int or type(value) == float):
+        elif(isinstance(value,int) or isinstance(value,float)):
             self.psplit = False
         else:                           
             raise Exception('Values given in setInitial() are not correct!')
@@ -713,9 +714,9 @@ class Model:
         else: #if there is multi initial populations mode (self.psplit == true), check if all vectors are the same, they must be the same
             checklen = None
             for elem in self.populations:
-                if(not(type(elem.initial) == list or type(elem.initial) == np.ndarray)):
+                if(not(isinstance(elem.initial,list) or isinstance(elem.initial,np.ndarray))):
                     raise Exception('Initial population vectors are not properly set! You have to set them all manually!!!')
-                if(checklen == None): checklen = len(elem.initial)
+                if(checklen is None): checklen = len(elem.initial)
                 if(checklen != len(elem.initial)):
                     raise Exception('Initial population vectors are not properly set! They all must have the same length, and you have to set them all manually!!!')
             
@@ -781,7 +782,7 @@ class Model:
             #if initials are not fixed, check if they have correct dependence to force sum to be equal to 1. it may be hard to code in general form....
             #... invent more tests, to have better feedback if something if wrong before program fails...
             #for now, probe/irr wavelengths should be always fixed (in future, where epsilon curve will be used it may be ok to vary them)
-        except:
+        except Exception:
             print("Something went wrong during parameter check! This is very strange error! Parameters are not validiated! Check parameters if everything is all right!")
             return False
         return result   
@@ -865,7 +866,7 @@ class Model:
             grid1 = data.data_t[:splitpoint1+1]
             y1 = odeint(self.derrivt, initial_conditions, grid1, args=(data.irradiation,data.irradiation_length,0.0)) # by adding hmax specify max step
             initial_conditions = y1[-1]
-            if(population_num == None):
+            if(population_num is None):
                 abs1 = [self.absorbance(cse, data.probe_length, data.probe) for cse in y1]
             else:
                 abs1 = [cse[population_num] for cse in y1] #mało eleganckie, ale zwykłe y1[:,pop_num] nie dziala...
@@ -874,7 +875,7 @@ class Model:
         grid2 = data.data_t[splitpoint1:splitpoint2+1]
         y2 = odeint(self.derrivt, initial_conditions, grid2, args=(data.irradiation,data.irradiation_length,data.intensity)) # by adding hmax specify max step
         initial_conditions = y2[-1]
-        if(population_num == None):
+        if(population_num is None):
             abs2 = [self.absorbance(cse, data.probe_length, data.probe) for cse in y2]
         else:
             abs2 = [cse[population_num] for cse in y2]
@@ -883,7 +884,7 @@ class Model:
         if splitpoint2 != len(data.data_t)-1:
             grid3 = data.data_t[splitpoint2:]
             y3 = odeint(self.derrivt, initial_conditions, grid3, args=(data.irradiation,data.irradiation_length,0.0)) # by adding hmax specify max step
-            if(population_num == None):
+            if(population_num is None):
                 abs3 = [self.absorbance(cse, data.probe_length, data.probe) for cse in y3]
             else:
                 abs3 = [cse[population_num] for cse in y3]
@@ -913,7 +914,7 @@ class Model:
         colors = ("b","r","g","c","m","y","C0","C1","C2","C3","C4","C5","C6","C7") * 100  #color order
         plt.figure(dpi=dpi)
         
-        if num == None:
+        if(num is None):
             tmplist = list()
             for i in range(experiment.count):
                 tmplist.append(self.solveModelSingle(experiment.all_data[i]))
@@ -927,15 +928,15 @@ class Model:
                 plt.plot(experiment.all_data[num].data_t, experiment.all_data[num].data_a, 'bo')
                 plt.plot(tmp.data_t, tmp.data_a, 'r-')
         
-        if title != None:
+        if(title is not None):
             plt.title(title, loc="left", fontsize=16)
         plt.xlabel('Time (s)',fontsize=16)
         plt.ylabel('\u0394A or A',fontsize=16)
         plt.xticks(fontsize=12)
         plt.yticks(fontsize=12)        
-        if x_min != None:
+        if(x_min is not None):
             plt.xlim(left=x_min) 
-        if x_max != None:
+        if(x_max is not None):
             plt.xlim(right=x_max)             
         plt.show()
     
@@ -948,15 +949,15 @@ class Model:
             plt.plot(tmp.data_t, tmp.data_a, colors[num]+'-', label = "Population " + self.populations[num].name)
         plt.legend(fontsize="x-small", frameon=False, labelspacing=0.1)
         
-        if title != None:
+        if(title is not None):
             plt.title(title, loc="left", fontsize=16)
         plt.xlabel('Time (s)',fontsize=16)
         plt.ylabel('Concentration',fontsize=16)
         plt.xticks(fontsize=12)
         plt.yticks(fontsize=12)        
-        if x_min != None:
+        if(x_min is not None):
             plt.xlim(left=x_min) 
-        if x_max != None:
+        if(x_max is not None):
             plt.xlim(right=x_max)             
         plt.show()
         

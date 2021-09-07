@@ -4,6 +4,7 @@ manipulations. Especially, Experiment class is intended to contain full
 set of data, which posses some integrity (or just shared experimental
 conditions) and are meant to be modelled together.
 """
+__version__ = "v0.2"
 __authors__ = ["Stanisław Niziński"]
 #__authors__.append("Add yourself my friend...")
 
@@ -24,7 +25,7 @@ class LightEvent: #designates light distribution starting from some moment to th
 
 class KineticData:
     def __init__(self, filename, probe, irradiation, intensity = 0.0, absorbance = 0.0, t_on = None, t_off = None, probe_length = 1, irradiation_length = 1, num = None, zeroed = False, src = None, skip_header = 0, skip_footer = 0, temperature = None):    
-        if(src == None):
+        if(src is None):
             #inport data
             #data = np.loadtxt(filename) #previously used
             data = np.genfromtxt(filename, skip_header=skip_header, skip_footer=skip_footer, dtype=float, invalid_raise = False)
@@ -43,8 +44,8 @@ class KineticData:
             self.data_t = tmp['Time'].to_numpy() 
             self.data_a = selected_columns.mean(axis = 1, skipna = True).to_numpy()       
         else: #just generate some grid and NaNs as values, ignore filename value
-            if(t_on == None): raise Exception("Please set some t_on value!")
-            if(t_off == None): raise Exception("Please set some t_off value!")
+            if(t_on is None): raise Exception("Please set some t_on value!")
+            if(t_off is None): raise Exception("Please set some t_off value!")
             irr_time = np.abs(t_off-t_on)
             self.data_t = np.linspace(t_on-10, t_off+irr_time*5, num=10000)
             self.data_a = self.data_t * np.nan
@@ -55,12 +56,12 @@ class KineticData:
         self.intensity = intensity
         self.temperature = temperature
         self.absorbance = absorbance #lets say for now that it is absorbance at irradiation wavelength in the ground state
-        if t_on == None:
+        if(t_on is None):
             self.t_on = self.data_t[0]
         else:
             self.t_on = t_on #before t0 there is no irradiation
 
-        if t_off == None:
+        if(t_off is None):
             self.t_off = self.data_t[-1]
         else:
             self.t_off = t_off #before t0 there is no irradiation
@@ -88,7 +89,7 @@ class KineticData:
     def genParameters(self): #parameters are fixed by default, unfix some of them before fitting procedure
         params = MParameters()
         numstring = ''
-        if self.num != None:
+        if(self.num is not None):
             numstring = '_' + str(self.num) + '_'
         params.add(MParameter(numstring+'probe', value=float(self.probe), vary=False, min=0))
         params.add(MParameter(numstring+'irradiation', value=float(self.irradiation), vary=False, min=0))
@@ -104,7 +105,7 @@ class KineticData:
     def updateParameters(self, params):
         p = params.valuesdict()
         numstring = ''
-        if self.num != None:
+        if(self.num is not None):
             numstring = '_' + str(self.num) + '_'
         self.probe = p[numstring+'probe']
         self.irradiation = p[numstring+'irradiation']
@@ -208,7 +209,7 @@ class Experiment: #container for kineticdata or other future data types prepared
     def plotYourself(self, num = None, dpi=150):
         plt.figure(dpi=dpi)
         
-        if num == None:
+        if(num is None):
             for i in range(self.count):
                 plt.plot(self.all_data[i].data_t, self.all_data[i].data_a, 'b-')
         else:
