@@ -49,22 +49,27 @@ class ModPopulation:
         self.rect_h = 40
         self.rect = QtCore.QRect(150, 20, self.rect_w, self.rect_h)
         
-    def remove(self, model): #before calling ensure that all arrows with this population are removed, in other case there will be exception!
+    def remove(self, model): 
+        #before calling ensure that all arrows with this population are removed,
+        #in other case there will be exception!
         if len(self.arrows) != 0:
-            raise Exception('Attempted to invalid population removal!!')
+            raise Exception("Attempted to invalid population removal!!")
         n = model.populations.index(self)
         model.populations.pop(n)
         
-    def countProcesses(self, second_population): #gives numer of the existing arrows between populations
+    def countProcesses(self, second_population):
+        #gives numer of the existing arrows between populations
         arrows = 0
         for arr in self.arrows:
-            if( ( arr.source is self and arr.target is second_population ) or ( arr.source is second_population and arr.target is self ) ):
+            if( ( arr.source is self and arr.target is second_population ) or 
+               ( arr.source is second_population and arr.target is self ) ):
                 arrows += 1
         return arrows        
 
 class ModProcess:
     def __init__(self, new_name, pop_source, pop_target):
-        arrow_count = pop_source.countProcesses(pop_target) #check how many parallel arrows already there
+        #firstly check how many parallel arrows already there
+        arrow_count = pop_source.countProcesses(pop_target) 
         self.name = new_name #name of the process
         self.source = pop_source #initialize yourself with both neighbour populations
         self.target = pop_target
@@ -72,10 +77,12 @@ class ModProcess:
         self.target.arrows.append(self)
         self.p1 = QtCore.QPoint()
         self.p2 = QtCore.QPoint()
-        self.type = ''
-        self.number = arrow_count + 1 #number of arrow between some pair of populations.numbering halps to render arrows separately
+        self.type = ""
+        #number of arrow between some pair of populations.numbering helps to render arrows separately
+        self.number = arrow_count + 1 
         self.displacement = 14 #separation distance between arrows
-        self.dist_treshold = 7 #if distance from point to crossing point is below treshold function cotains return true hehehe
+        #if distance from point to crossing point is below treshold function contains return true
+        self.dist_treshold = 7 
     
     def remove(self, model): #removes arrow from neighbouring populations and model
         n1 = self.source.arrows.index(self)
@@ -91,18 +98,22 @@ class ModProcess:
         model.processes.pop(n3)
         
     def getsetLocation(self):
-        p1 = QtCore.QPointF(self.source.rect.x()+self.source.rect.width()/2, self.source.rect.y()+self.source.rect.height()/2)
-        p2 = QtCore.QPointF(self.target.rect.x()+self.target.rect.width()/2, self.target.rect.y()+self.target.rect.height()/2)
+        p1 = QtCore.QPointF(self.source.rect.x()+self.source.rect.width()/2, 
+                            self.source.rect.y()+self.source.rect.height()/2)
+        p2 = QtCore.QPointF(self.target.rect.x()+self.target.rect.width()/2, 
+                            self.target.rect.y()+self.target.rect.height()/2)
         
         diff = p2 - p1 # just make arrow shorter....
-        correction = abs(diff.x() / math.sqrt(diff.x()*diff.x() + diff.y()*diff.y())) #uzaleznij odjecie od kata...
+        #uzaleznij odjecie od kata...
+        correction = abs(diff.x() / math.sqrt(diff.x()*diff.x() + diff.y()*diff.y())) 
         to_substr = (40 * correction + 28) * diff / math.sqrt(diff.x()*diff.x() + diff.y()*diff.y())
         p1 = p1 + to_substr
         p2 = p2 - to_substr
         
         diff = p1 - p2
         difflen = math.sqrt(diff.x()**2 + diff.y()**2)
-        if(self.number > 1 and difflen != 0.0): #move second, third, ... arrow a little bit to avoid overlap
+        #move second, third, ... arrow a little bit to avoid overlap
+        if(self.number > 1 and difflen != 0.0):
             sinkat = diff.y() / difflen
             coskat = diff.x() / difflen
             if(sinkat < 0):
@@ -122,7 +133,8 @@ class ModProcess:
         return (p1, p2)
         
     def contains(self, point):
-        a_p1p2 = float(self.p2.y() - self.p1.y()) / float(self.p2.x() - self.p1.x()) #find linear eq for p1 and p2
+        #find linear eq for p1 and p2
+        a_p1p2 = float(self.p2.y() - self.p1.y()) / float(self.p2.x() - self.p1.x())
         b_p1p2 = float(self.p1.y()) - a_p1p2 * float(self.p1.x())
         
         a_point = -1 / a_p1p2 #find linear eq for point which is perpendicular to p1p2
@@ -166,7 +178,7 @@ class ModThermal(ModProcess):
     def __init__(self, new_name, pop_source, pop_target):
         super().__init__(new_name, pop_source, pop_target)
         self.k = 0
-        self.type = 'k'
+        self.type = "k"
         
     def paintYourself(self, painter):
         p1, p2 = self.getsetLocation()
@@ -206,11 +218,12 @@ class ModThermal(ModProcess):
         painter.drawLine(p2, p2 + p_arr1)
         painter.drawLine(p2, p2 + p_arr2)
         
-class ModThermalEyring(ModProcess): #extension of ModThermal, where k is not const. but depends on temperature
+class ModThermalEyring(ModProcess):
+    #extension of ModThermal, where k is not const. but depends on temperature
     def __init__(self, new_name, pop_source, pop_target):
         super().__init__(new_name, pop_source, pop_target)
         self.k = None #is recalculated after calling getK()
-        self.type = 'ke'
+        self.type = "ke"
         self.kappa = 1 #transmission coefficient, no unit
         self.deltaH = 10 #enthalpy of activation (with two plusses in the upper index), [kcal/mol]
         self.deltaS = 0.001 #entropy of activation (with two plusses in the upper index) [kcal/mol/K]
@@ -264,7 +277,7 @@ class ModRadiative(ModProcess):
     def __init__(self, new_name, pop_source, pop_target):
         super().__init__(new_name, pop_source, pop_target)    
         self.fi = 0  
-        self.type = 'fi'
+        self.type = "fi"
         
     def paintYourself(self, painter):
         p1, p2 = self.getsetLocation()
@@ -290,7 +303,7 @@ class ModelWindow(QWidget):
     def __init__(self, model_ref):
         super().__init__()
         self.model = model_ref
-        self.title = 'Model Editor'
+        self.title = "Model Editor"
         self.left = 10
         self.top = 35
         self.width = 800
@@ -301,16 +314,16 @@ class ModelWindow(QWidget):
         self.show()
         
         ## Create some widgets to be placed inside
-        self.label1 = QtWidgets.QLabel('Population name:', self)
-        self.text1 = QtWidgets.QLineEdit('', self)
-        self.button1 = QtWidgets.QPushButton('Add population', self)
+        self.label1 = QtWidgets.QLabel("Population name:", self)
+        self.text1 = QtWidgets.QLineEdit("", self)
+        self.button1 = QtWidgets.QPushButton("Add population", self)
         self.button1.clicked.connect(self.button1Func)
-        self.label5 = QtWidgets.QLabel('Process name:', self)
-        self.text5 = QtWidgets.QLineEdit('', self)
+        self.label5 = QtWidgets.QLabel("Process name:", self)
+        self.text5 = QtWidgets.QLineEdit("", self)
         self.select_process = QtWidgets.QComboBox(self)
         self.select_process.addItem("Thermal")
         self.select_process.addItem("Light activated")
-        self.button5 = QtWidgets.QPushButton('Add process', self)
+        self.button5 = QtWidgets.QPushButton("Add process", self)
         self.button5.clicked.connect(self.button5Func)
         self.label1.show()
         self.text1.show()
@@ -328,25 +341,25 @@ class ModelWindow(QWidget):
         self.ref_mouse = QtCore.QPoint(0,0) #marker of mouse position when population was clicked
         
         self.pop_edit = False #to edit populatiions
-        self.label2 = QtWidgets.QLabel('', self)
+        self.label2 = QtWidgets.QLabel("", self)
         self.eps_table = QtWidgets.QTableWidget(self)
         self.eps_table.setColumnCount(2)
         self.eps_table.setColumnWidth(0,49);
         self.eps_table.setColumnWidth(1,49);
-        self.eps_table.setHorizontalHeaderLabels(('lambda', 'epsilon'));
+        self.eps_table.setHorizontalHeaderLabels(("lambda", "epsilon"));
         self.eps_table.verticalHeader().setVisible(False);
-        self.button2 = QtWidgets.QPushButton('Add eps', self)
+        self.button2 = QtWidgets.QPushButton("Add eps", self)
         self.button2.clicked.connect(self.button2Func)        
-        self.button3 = QtWidgets.QPushButton('Save!', self)
+        self.button3 = QtWidgets.QPushButton("Save!", self)
         self.button3.clicked.connect(self.button3Func)
-        self.button31 = QtWidgets.QPushButton('Delete', self)
+        self.button31 = QtWidgets.QPushButton("Delete", self)
         self.button31.clicked.connect(self.button31Func)    
         
         self.proc_edit = False #to edit processes
-        self.text_proc = QtWidgets.QLineEdit('', self) 
-        self.button4 = QtWidgets.QPushButton('Save!', self)
+        self.text_proc = QtWidgets.QLineEdit("", self) 
+        self.button4 = QtWidgets.QPushButton("Save!", self)
         self.button4.clicked.connect(self.button4Func)
-        self.button41 = QtWidgets.QPushButton('Delete', self)
+        self.button41 = QtWidgets.QPushButton("Delete", self)
         self.button41.clicked.connect(self.button41Func)
         
         self.process_adding = False #indicates that process arrow is being added (select populations)
@@ -366,21 +379,22 @@ class ModelWindow(QWidget):
             
         if found == False and len(self.text1.text()) > 0:
             self.model.addPopulation(ModPopulation(self.text1.text()))
-            self.text1.setText('')
+            self.text1.setText("")
             self.repaint()
 
     def button2Func(self): #adds new epsilon entry to population
         if self.pop_edit != False:
             added_row = self.eps_table.rowCount()
             self.eps_table.setRowCount(added_row + 1)
-            tmp1 = QtWidgets.QTableWidgetItem('')
-            tmp2 = QtWidgets.QTableWidgetItem('')
+            tmp1 = QtWidgets.QTableWidgetItem("")
+            tmp2 = QtWidgets.QTableWidgetItem("")
             #set flags?
             self.eps_table.setItem(added_row,0,tmp1)
             self.eps_table.setItem(added_row,1,tmp2)
         
     def button3Func(self): #saves epsilons to population
-        num_rows = self.eps_table.rowCount() ##in future ensure that values are not rounded during this process (dict->txt->dict)
+        #in future ensure that values are not rounded during this process (dict->txt->dict)
+        num_rows = self.eps_table.rowCount() 
         new_dict = dict()
         for row in range(num_rows):
             tmp_item1 = self.eps_table.item(row, 0).text()
@@ -400,18 +414,18 @@ class ModelWindow(QWidget):
     
     def button4Func(self): #finished edition of process
         if self.isStrNumber(self.text_proc.text()):
-            if self.proc_edit.type == 'k':
+            if self.proc_edit.type == "k":
                 self.proc_edit.k = float(self.text_proc.text())
-            elif self.proc_edit.type == 'fi':
+            elif self.proc_edit.type == "fi":
                 self.proc_edit.fi = float(self.text_proc.text())    
             self.proc_edit = False
-            self.text_proc.setText('')
+            self.text_proc.setText("")
         self.repaint()
             
     def button41Func(self): #deletes arrow
         self.proc_edit.remove(self.model)
         self.proc_edit = False
-        self.text_proc.setText('')
+        self.text_proc.setText("")
         self.repaint()
             
     def button5Func(self): #adds process and starts selection of connected populations
@@ -494,7 +508,8 @@ class ModelWindow(QWidget):
         painter.setPen(rmpen)
         marg = 5
         
-        for r in self.model.populations: #should also call paintYourself function of the population, just like in case of processss
+        #should also call paintYourself function of the population, just like in case of processss
+        for r in self.model.populations: 
             if self.mousepressed is r:
                 tmprect = copy.deepcopy(r.rect)
                 tmprect.setX(tmprect.x() + self.mouse_dx)
@@ -504,7 +519,8 @@ class ModelWindow(QWidget):
             else:
                 tmprect = r.rect   
             painter.drawRoundedRect(tmprect,10,10)
-            painter.drawText(tmprect.x()+marg, tmprect.y()+marg, tmprect.width()-2*marg, tmprect.height()-2*marg, QtCore.Qt.AlignCenter, r.name)
+            painter.drawText(tmprect.x()+marg, tmprect.y()+marg, tmprect.width()-2*marg, 
+                             tmprect.height()-2*marg, QtCore.Qt.AlignCenter, r.name)
 
         colorum = QtGui.QColor(200, 100, 0)
         rmpen.setBrush(colorum)
@@ -541,7 +557,8 @@ class ModelWindow(QWidget):
                     self.ref_mouse = event.pos()
                     break
                     
-            if self.process_adding != True and self.process_adding != False: #finalize arrow adding process
+            #finalize arrow adding process
+            if self.process_adding != True and self.process_adding != False:
                 for r in self.model.populations:
                     found = False #if user clicked something useful
                     if r.rect.contains(event.pos()):
@@ -554,9 +571,10 @@ class ModelWindow(QWidget):
                     if self.select_process.currentIndex() == 0: # Thermal
                         tmp_arrow = ModThermal(self.text5.text(), self.process_adding, found)
                     elif self.select_process.currentIndex() == 1: # Light activated
-                        tmp_arrow = ModRadiative(self.text5.text(), self.process_adding, found) #asumes, that there are only 2 kinds of arrows, which can be added
+                        #asumes, that there are only 2 kinds of arrows, which can be added!
+                        tmp_arrow = ModRadiative(self.text5.text(), self.process_adding, found) 
                     self.model.addProcess(tmp_arrow)
-                    self.text5.setText('')     
+                    self.text5.setText("")     
                     self.process_adding = False
 
             if self.process_adding == True: #process arrow adding, first popul needs to be selected
@@ -576,17 +594,17 @@ class ModelWindow(QWidget):
                 for p in self.model.processes:
                     if p.contains(event.pos()):
                         self.proc_edit = p
-                        self.label2.setText('Edit ' + p.type + ' for ' + p.name + ' :')
-                        if p.type == 'k':
+                        self.label2.setText("Edit " + p.type + " for " + p.name + " :")
+                        if p.type == "k":
                             self.text_proc.setText(str(p.k))
-                        elif p.type == 'fi':
+                        elif p.type == "fi":
                             self.text_proc.setText(str(p.fi))  
                         break
             if self.pop_edit == False and self.proc_edit == False: #should edit population?
                 for r in self.model.populations:
                     if r.rect.contains(event.pos()):
                         self.pop_edit = r
-                        self.label2.setText('Edit eps for ' + r.name + ' :')
+                        self.label2.setText("Edit eps for " + r.name + " :")
                         self.eps_table.setRowCount(len(r.epsilon))
                         ct_tmp = 0
                         for k, v in r.epsilon.items():
@@ -613,10 +631,12 @@ class Model:
     def addProcess(self, new_process):
         self.processes.append(new_process)
         
-    def countProcesses(self, population1, population2): #gives numer of the existing arrows between populations
+    def countProcesses(self, population1, population2):
+        #gives numer of the existing arrows between populations
         arrows = 0
         for arr in population1.arrows:
-            if( ( arr.source is population1 and arr.target is population2 ) or ( arr.source is population2 and arr.target is population1 ) ):
+            if( ( arr.source is population1 and arr.target is population2 ) or 
+               ( arr.source is population2 and arr.target is population1 ) ):
                 arrows += 1
         return arrows        
 
@@ -625,9 +645,10 @@ class Model:
         ex = ModelWindow(self)
         app.exec_()
         
-    def turnKsIntoEyrings(self): #simple helper func to replace constant k thermal arrows with Ering ones
+    def turnKsIntoEyrings(self):
+        #simple helper func to replace constant k thermal arrows with Ering ones
         for arr in self.processes:
-            if(arr.type == 'k'):
+            if(arr.type == "k"):
                 old_name = arr.name
                 source = arr.source
                 target = arr.target
@@ -647,12 +668,14 @@ class Model:
         return loaded
         
     def setInitial(self, name, value): #set some initial population/s manually
-        if(isinstance(value,list) or isinstance(value,np.ndarray)): #if you give value as array there will be differnt initial populations for each kinetic
-            self.psplit = True                                #however in this case number of kinetics must match number of values in array
+        #if you give value as array there will be differnt initial populations for each kinetic
+        #however in this case number of kinetics must match number of values in array
+        if(isinstance(value,list) or isinstance(value,np.ndarray)): 
+            self.psplit = True                                
         elif(isinstance(value,int) or isinstance(value,float)):
             self.psplit = False
         else:                           
-            raise Exception('Values given in setInitial() are not correct!')
+            raise Exception("Values given in setInitial() are not correct!")
         found = False
         for elem in self.populations:            
             if elem.name == name:
@@ -660,15 +683,18 @@ class Model:
                 found = True
                 break
         if found == False:
-            raise Exception('Cannot find and set initial for requested population!')
-        #before fit program must check if all populations have initials of the same length. if not then exception!
+            raise Exception("Cannot find and set initial for requested population!")
+        #before fit program must check if all populations have initials of the 
+        #same length. if not then exception!
     
     def configureInitial(self): #set some initial populations for populations
         self.psplit = False
-        for elem in self.populations: #somehow initial conditions also depend on model (their structure), however they are not directly determined by model 
+        #somehow initial conditions also depend on model (their structure), 
+        #however they are not directly determined by model 
+        for elem in self.populations: 
             is_sourcethermstate = False
             for arr in elem.arrows:
-                if arr.source is elem and ( arr.type == 'k' or arr.type == 'ke'):
+                if arr.source is elem and ( arr.type == "k" or arr.type == "ke"):
                     is_sourcethermstate = True
             if is_sourcethermstate == True:
                 elem.initial = 0.0
@@ -680,26 +706,36 @@ class Model:
             if x.initial != 0.0:
                 init_count += 1
         if(init_count != 1):
-            raise Exception('Cannot determine ground state of the model! Change model, or set initial conditions manually (setInitial() function)!')
+            raise Exception("Cannot determine ground state of the model! Change model"
+                            ", or set initial conditions manually (setInitial() function)!")
     
-    def genParameters(self): #parameters are fixed by default, unfix some of them before fitting procedure
+    def genParameters(self):
+        #parameters are fixed by default, unfix some of them before fitting procedure
         params = MParameters()
         
         for elem in self.populations:
             for l, eps in elem.epsilon.items():
-                params.add(MParameter(elem.name + '__' + str(l).replace('.','_'), value=eps, vary=False))
+                params.add(MParameter(elem.name + "__" + str(l).replace(".","_"), 
+                                      value=eps, vary=False))
             
         for elem in self.processes:
-            if elem.type == 'fi':
-                params.add(MParameter(elem.name + '__fi', value=elem.fi, vary=False, min=0, max=1))      #well, theoretically can be > 1, but not in this meaning i think
-            elif elem.type == 'k':
-                params.add(MParameter(elem.name + '__k', value=elem.k, vary=False, min=0))   
-            elif elem.type == 'ke': #temperature-dependent rate constant!
-                params.add(MParameter(elem.name + '__deltaH', value=elem.deltaH, vary=False)) #negative energy barrier makes no sense, but may happen from data noise
-                params.add(MParameter(elem.name + '__deltaS', value=elem.deltaS, vary=False)) 
+            if(elem.type == "fi"):
+                params.add(MParameter(elem.name + "__fi", value=elem.fi, 
+                                      vary=False, min=0, max=1))
+                #well, theoretically can be > 1, but not in this meaning i think
+            elif(elem.type == "k"):
+                params.add(MParameter(elem.name + "__k", value=elem.k, 
+                                      vary=False, min=0))   
+            elif(elem.type == "ke"): #temperature-dependent rate constant!
+                params.add(MParameter(elem.name + "__deltaH", value=elem.deltaH, 
+                                      vary=False)) 
+                #negative energy barrier makes no sense, but may happen from data noise
+                params.add(MParameter(elem.name + "__deltaS", value=elem.deltaS, 
+                                      vary=False)) 
                 
         if(self.psplit == False):  
-            max_initial = 0.0    #check if soeme initial populations are determined if no, then do it yourself
+            #check if soeme initial populations are determined if no, then do it yourself
+            max_initial = 0.0    
             for elem in self.populations:    
                 if elem.initial > max_initial:
                     max_initial = elem.initial
@@ -707,26 +743,39 @@ class Model:
             if max_initial == 0.0:
                 self.configureInitial()
                 
-            for elem in self.populations: #somehow initial conditions also depend on model, however they are not directly determined by model 
-                params.add(MParameter(elem.name, value=elem.initial, vary=False, min=0, max=1)) #initialize only 'ground states' as initial states
+            #somehow initial conditions also depend on model, however they are 
+            #not directly determined by model 
+            for elem in self.populations: 
+                #initialize only "ground states" as initial states
+                params.add(MParameter(elem.name, value=elem.initial, 
+                                      vary=False, min=0, max=1)) 
             
-            
-        else: #if there is multi initial populations mode (self.psplit == true), check if all vectors are the same, they must be the same
+        #if there is multi initial populations mode (self.psplit == true),
+        #check if all vectors are the same, they must be the same    
+        else: 
             checklen = None
             for elem in self.populations:
                 if(not(isinstance(elem.initial,list) or isinstance(elem.initial,np.ndarray))):
-                    raise Exception('Initial population vectors are not properly set! You have to set them all manually!!!')
+                    raise Exception("Initial population vectors are not properly set! "
+                                    "You have to set them all manually!!!")
                 if(checklen is None): checklen = len(elem.initial)
                 if(checklen != len(elem.initial)):
-                    raise Exception('Initial population vectors are not properly set! They all must have the same length, and you have to set them all manually!!!')
+                    raise Exception("Initial population vectors are not properly set! "
+                                    "They all must have the same length, and you "
+                                    "have to set them all manually!!!")
             
             for elem in self.populations:
                 for num in range(len(elem.initial)):
-                    params.add(MParameter('_' + str(num) + '_' + elem.name, value=elem.initial[num], vary=False, min=0, max=1)) #initialize only 'ground states' as initial states
+                    #initialize only "ground states" as initial states
+                    params.add(MParameter("_" + str(num) + "_" + elem.name, 
+                                          value=elem.initial[num], 
+                                          vary=False, min=0, max=1)) 
             
         return params
         
-    def updateParameters(self, params):#updates values of existing parameters. does not add new values, does not modify model structure
+    def updateParameters(self, params):
+    #updates values of existing parameters. does not add new values,
+    #does not modify model structure
         p = params.valuesdict()
         for elem in self.populations:
             
@@ -734,24 +783,34 @@ class Model:
                 elem.initial = p[elem.name]
             else:
                 for num in range(len(elem.initial)):
-                    elem.initial[num] = p['_' + str(num) + '_' + elem.name]
+                    elem.initial[num] = p["_" + str(num) + "_" + elem.name]
             
             for l, eps in elem.epsilon.items():
-                elem.epsilon[l] = p[elem.name + '__' + str(l).replace('.','_')]
+                elem.epsilon[l] = p[elem.name + "__" + str(l).replace(".","_")]
             
         for elem in self.processes:
-            if elem.type == 'fi':
-                elem.fi = p[elem.name + '__fi']    
-            elif elem.type == 'k':
-                elem.k = p[elem.name + '__k']     
-            elif elem.type == 'ke': #temperature-dependent rate constant!
-                elem.deltaH = p[elem.name + '__deltaH'] #negative energy barrier makes no sense
-                elem.deltaS = p[elem.name + '__deltaS'] 
+            if elem.type == "fi":
+                elem.fi = p[elem.name + "__fi"]    
+            elif elem.type == "k":
+                elem.k = p[elem.name + "__k"]     
+            elif elem.type == "ke": #temperature-dependent rate constant!
+                #negative energy barrier makes no sense!
+                elem.deltaH = p[elem.name + "__deltaH"] 
+                elem.deltaS = p[elem.name + "__deltaS"] 
         
-    def checkParams(self, experiment): #run tests if params are correctly set. experiment object is to validiate its compatibility with model
-        result = True                  #it should be run after updataParameers for both model and experiment, and assume that funcs loaded them correctly
-        return True #OK, there is PROBLEM. it was supposed to check params which are alrady loaded to model and experiment
-        p = params.valuesdict() #but i wrote like check of params object. and relaized that params itself should also have check func, thbk about it ....
+    def checkParams(self, experiment):
+        #run tests if params are correctly set. 
+        #experiment object is to validiate its compatibility with model
+        #it should be run after updataParameers for both model and experiment, 
+        #and assume that funcs loaded them correctly
+        result = True
+        #OK, there is PROBLEM. it was supposed to check params which are alrady 
+        #loaded to model and experiment   
+        #but i wrote like check of params object. and realized that params 
+        #itself should also have check func, thbk about it ....               
+        return True 
+        
+        p = params.valuesdict() 
         try:    
             if(self.psplit == False):  
                 pop_sum = 0
@@ -759,31 +818,42 @@ class Model:
                     pop_sum += p[elem.name]
                 if(pop_sum != 1):
                     result = False
-                    print("Initial population values does not sum to unity. Correct them, their sum needs to be 1!")
+                    print("Initial population values does not sum to unity. "
+                          "Correct them, their sum needs to be 1!")
                     
                     
                     
             else:
-                #TODO: check if number of initial parameters for each population is equal to number of kinetics in experiment!
+                #TODO: check if number of initial parameters for each population
+                #is equal to number of kinetics in experiment!
                 
                 pop_sum = [0]*len(self.populations[0].initial)
                 for elem in self.populations: 
                     for num in range(len(elem.initial)):
-                        pop_sum[num] += p['_' + str(num) + '_' + elem.name]
+                        pop_sum[num] += p["_" + str(num) + "_" + elem.name]
                 for i in range(len(pop_sum)):
                     if(pop_sum[i] != 1):
                         result = False
-                        print("Initial population values in case of kinetic " + str(i) + " does not sum to unity (kinetics are counted from 0). Correct them, their sum needs to be 1!")
+                        print("Initial population values in case of kinetic " + 
+                              str(i) + " does not sum to unity (kinetics are "
+                              "counted from 0). Correct them, their sum needs to be 1!")
    
                 
             #TODO:
             #check if probe and irr in exp has epsilon in model
-            #check if epsilon at irr is != than zero (othervise population calculated from abs will be undetermined, also what is the point of irr at zero epsilon????)
-            #if initials are not fixed, check if they have correct dependence to force sum to be equal to 1. it may be hard to code in general form....
-            #... invent more tests, to have better feedback if something if wrong before program fails...
-            #for now, probe/irr wavelengths should be always fixed (in future, where epsilon curve will be used it may be ok to vary them)
+            #check if epsilon at irr is != than zero (othervise population 
+            #calculated from abs will be undetermined, also what is the point 
+            #of irr at zero epsilon????)
+            #if initials are not fixed, check if they have correct dependence 
+            #to force sum to be equal to 1. it may be hard to code in general form....
+            #... invent more tests, to have better feedback if something if 
+            #wrong before program fails...
+            #for now, probe/irr wavelengths should be always fixed (in future, 
+            #where epsilon curve will be used it may be ok to vary them)
         except Exception:
-            print("Something went wrong during parameter check! This is very strange error! Parameters are not validiated! Check parameters if everything is all right!")
+            print("Something went wrong during parameter check! This is very "
+                  "strange error! Parameters are not validiated! Check "
+                  "parameters if everything is all right!")
             return False
         return result   
        
@@ -801,7 +871,9 @@ class Model:
     def derrivt(self, cs, t, irradiation, length, intensity):
         out = list()
         Ftmp = self.F(cs, irradiation, length)
-        for c in range(len(cs)): #for every population add contributions from different populations if there is some process
+        #for every population add contributions from different populations 
+        #if there is some process
+        for c in range(len(cs)): 
             ct = 0.0
             for arr in self.populations[c].arrows:
                 cont = 0.0
@@ -809,34 +881,45 @@ class Model:
                     cont = - cs[c]
                 elif self.populations[c] is arr.target:
                     cont = cs[self.populations.index(arr.source)]
-                if arr.type == 'k':
+                if arr.type == "k":
                     cont *= arr.k
-                elif arr.type == 'ke':
-                    cont *= arr.k #remember to caculta it before otherwise result will be incorrect
-                elif arr.type == 'fi':
+                elif arr.type == "ke":
+                    #remember to caculate it before otherwise result will be incorrect
+                    cont *= arr.k 
+                elif arr.type == "fi":
                     cont *= arr.fi * Ftmp * intensity * arr.source.epsilon[irradiation] * length 
                 ct += cont
             out.append(ct)
         return out #returns list with derrivatives of cs
     
-    def absorbance(self, cs, length, wavelength): #calculate absorbance for some concentrations, wavelength and cuvette length
+    def absorbance(self, cs, length, wavelength): 
+        #calculate absorbance for some concentrations, wavelength and cuvette length
         out_abs = 0.0
         for x in range(len(cs)):
             out_abs += cs[x] * self.populations[x].epsilon[float(wavelength)]
         return out_abs * length
 
-    def solveModelSingle(self, data, population_num = None): #returns data object with values generated from model. update model with new params if they were obtained from fit
-        # population_num = None will calculate absorbances, but you can give population number to get concentration trace of this population
+    def solveModelSingle(self, data, population_num = None): 
+        #returns data object with values generated from model. 
+        #update model with new params if they were obtained from fit
+        # population_num = None will calculate absorbances, but you can give
+        #population number to get concentration trace of this population
         initial_conditions = list()
-        if(self.psplit == False): #there was major mistake, i corrected, but better check again, because error was really stupid and its late now...
+        #there was major mistake, i corrected, but better check again, 
+        #because error was really stupid and its late now...
+        if(self.psplit == False): 
             weighted_epsilons = [(elem.epsilon[data.irradiation] * elem.initial) for elem in self.populations]
             cfactor = data.absorbance/(data.irradiation_length * sum(weighted_epsilons))
-            for elem in self.populations: #create initial conditions, initialize all population in the ground state, if cannot find (or more than 1), raise error
+            #create initial conditions, initialize all population in the 
+            #ground state, if cannot find (or more than 1), raise error
+            for elem in self.populations: 
                 initial_conditions.append(elem.initial * cfactor)  
         else:
             weighted_epsilons = [(elem.epsilon[data.irradiation] * elem.initial[data.num]) for elem in self.populations]
             cfactor = data.absorbance/(data.irradiation_length * sum(weighted_epsilons))            
-            for elem in self.populations: #create initial conditions, initialize all population in the ground state, if cannot find (or more than 1), raise error
+            #create initial conditions, initialize all population in the
+            #ground state, if cannot find (or more than 1), raise error
+            for elem in self.populations: 
                 initial_conditions.append(elem.initial[data.num] * cfactor)  
             
         splitpoint1 = -1
@@ -859,21 +942,27 @@ class Model:
         abs_out = list()    
             
         for arr in self.processes:
-            if(arr.type == 'ke'):
-                arr.getK(data.temperature) #update temperature for temperature dependent process
+            if(arr.type == "ke"):
+                #update temperature for temperature dependent process
+                arr.getK(data.temperature) 
         
         if splitpoint1 != 0:
             grid1 = data.data_t[:splitpoint1+1]
-            y1 = odeint(self.derrivt, initial_conditions, grid1, args=(data.irradiation,data.irradiation_length,0.0)) # by adding hmax specify max step
+            # by adding hmax specify max step
+            y1 = odeint(self.derrivt, initial_conditions, grid1, 
+                        args=(data.irradiation,data.irradiation_length,0.0)) 
             initial_conditions = y1[-1]
             if(population_num is None):
                 abs1 = [self.absorbance(cse, data.probe_length, data.probe) for cse in y1]
             else:
-                abs1 = [cse[population_num] for cse in y1] #mało eleganckie, ale zwykłe y1[:,pop_num] nie dziala...
+                #mało eleganckie, ale zwykłe y1[:,pop_num] nie dziala...
+                abs1 = [cse[population_num] for cse in y1] 
             abs_out += abs1[:-1]
         
         grid2 = data.data_t[splitpoint1:splitpoint2+1]
-        y2 = odeint(self.derrivt, initial_conditions, grid2, args=(data.irradiation,data.irradiation_length,data.intensity)) # by adding hmax specify max step
+        # by adding hmax specify max step
+        y2 = odeint(self.derrivt, initial_conditions, grid2, 
+                    args=(data.irradiation,data.irradiation_length,data.intensity)) 
         initial_conditions = y2[-1]
         if(population_num is None):
             abs2 = [self.absorbance(cse, data.probe_length, data.probe) for cse in y2]
@@ -883,7 +972,9 @@ class Model:
         
         if splitpoint2 != len(data.data_t)-1:
             grid3 = data.data_t[splitpoint2:]
-            y3 = odeint(self.derrivt, initial_conditions, grid3, args=(data.irradiation,data.irradiation_length,0.0)) # by adding hmax specify max step
+            # by adding hmax specify max step
+            y3 = odeint(self.derrivt, initial_conditions, grid3, 
+                        args=(data.irradiation,data.irradiation_length,0.0)) 
             if(population_num is None):
                 abs3 = [self.absorbance(cse, data.probe_length, data.probe) for cse in y3]
             else:
@@ -897,13 +988,18 @@ class Model:
         
         output_data.data_a = abs_out
         if len(abs_out) != len(output_data.data_t):
-            raise Exception('Inconsistent generated data!')
+            raise Exception("Inconsistent generated data!")
             
         return output_data
     
-    def solveModel(self, experiment): #returns experiment object with values generated from model. update model with new params if they were obtained from fit
+    def solveModel(self, experiment): 
+        #returns experiment object with values generated from model.
+        #update model with new params if they were obtained from fit
         if(self.checkParams(experiment) == False):
-            raise Exception("Paratemer check directly before fitting process failed! Check again if all parameters are set correctly and nothing is missing! Note that both params from Experiment and Model objects are required!")
+            raise Exception("Paratemer check directly before fitting process "
+                            "failed! Check again if all parameters are set "
+                            "correctly and nothing is missing! Note that both "
+                            "params from Experiment and Model objects are required!")
         return_experiment = Experiment()
         for i in range(experiment.count):
             new_data = self.solveModelSingle(experiment.all_data[i])
@@ -918,20 +1014,23 @@ class Model:
             tmplist = list()
             for i in range(experiment.count):
                 tmplist.append(self.solveModelSingle(experiment.all_data[i]))
-                plt.plot(experiment.all_data[i].data_t, experiment.all_data[i].data_a, colors[i]+'-',alpha=0.5)
-                plt.plot(tmplist[i].data_t, tmplist[i].data_a, colors[i]+'-', label = "Kinetic " + str(i) + " irr: " + str(experiment.all_data[i].irradiation) + " nm, probe: " + str(experiment.all_data[i].probe) + " nm.")
-                #print(str(tmplist[i].data_t[120])+" is "+str(tmplist[i].data_a[120])) #akurat bylo potrzebne, wywal to...
+                plt.plot(experiment.all_data[i].data_t, experiment.all_data[i].data_a, 
+                         colors[i]+"-",alpha=0.5)
+                plt.plot(tmplist[i].data_t, tmplist[i].data_a, 
+                         colors[i]+"-", label = "Kinetic " + str(i) + " irr: " + \
+                         str(experiment.all_data[i].irradiation) + " nm, probe: " + \
+                         str(experiment.all_data[i].probe) + " nm.")
             plt.legend(fontsize="x-small", frameon=False, labelspacing=0.1)
         else:
             if num < experiment.count: # and num < tmp.count #dokoncz!!!!!!!!!!!!
                 tmp = self.solveModelSingle(experiment.all_data[num])
-                plt.plot(experiment.all_data[num].data_t, experiment.all_data[num].data_a, 'bo')
-                plt.plot(tmp.data_t, tmp.data_a, 'r-')
+                plt.plot(experiment.all_data[num].data_t, experiment.all_data[num].data_a, "bo")
+                plt.plot(tmp.data_t, tmp.data_a, "r-")
         
         if(title is not None):
             plt.title(title, loc="left", fontsize=16)
-        plt.xlabel('Time (s)',fontsize=16)
-        plt.ylabel('\u0394A or A',fontsize=16)
+        plt.xlabel("Time (s)",fontsize=16)
+        plt.ylabel("\u0394A or A",fontsize=16)
         plt.xticks(fontsize=12)
         plt.yticks(fontsize=12)        
         if(x_min is not None):
@@ -946,13 +1045,13 @@ class Model:
         
         for num in population_nums:
             tmp = self.solveModelSingle(data,num)
-            plt.plot(tmp.data_t, tmp.data_a, colors[num]+'-', label = "Population " + self.populations[num].name)
+            plt.plot(tmp.data_t, tmp.data_a, colors[num]+"-", label = "Population " + self.populations[num].name)
         plt.legend(fontsize="x-small", frameon=False, labelspacing=0.1)
         
         if(title is not None):
             plt.title(title, loc="left", fontsize=16)
-        plt.xlabel('Time (s)',fontsize=16)
-        plt.ylabel('Concentration',fontsize=16)
+        plt.xlabel("Time (s)",fontsize=16)
+        plt.ylabel("Concentration",fontsize=16)
         plt.xticks(fontsize=12)
         plt.yticks(fontsize=12)        
         if(x_min is not None):

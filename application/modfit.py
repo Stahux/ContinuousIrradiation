@@ -13,8 +13,10 @@ from numpy import inf
 import json
 from lmfit.jsonutils import decode4js
 
-#allows to set also penalty_std, which will switch on penalty and allow some swings in given parameter
-#setting some penalty_std will setup penalty mechanism, and initial value will be remembered as expected value
+#allows to set also penalty_std, which will switch on penalty 
+#and allow some swings in given parameter
+#setting some penalty_std will setup penalty mechanism, and initial 
+#value will be remembered as expected value
 
 """
  i copied oryginal code to change only Parameter to MParameter.
@@ -173,19 +175,21 @@ class ModFit(lmfit.Minimizer):
             model.genParameters()
             super().__init__(self.residual, 
                  model.genParameters() + experiment.genParameters(), 
-                 nan_policy='propagate')  
+                 nan_policy="propagate")  
         else:
-            super().__init__(self.residual, params, nan_policy='propagate')  
+            super().__init__(self.residual, params, nan_policy="propagate")  
           
         self.model = copy.deepcopy(model)
         self.experiment = copy.deepcopy(experiment)
     
     @staticmethod
-    def normalDistribution(x, mean, variance): #just normal dostribution
+    def normalDistribution(x, mean, variance): 
+        #just normal dostribution
         return np.exp(-np.square((x-mean)/variance)/2)/(variance*np.sqrt(2*np.pi))
 
     @staticmethod
-    def normalPenalty(value, expected, error, weight): #experimental penalty to keep param close within its error
+    def normalPenalty(value, expected, error, weight):
+        #experimental penalty to keep param close within its error
         return weight/ModFit.normalDistribution(value, expected, error)
     
     def residual(self, params):

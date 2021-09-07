@@ -15,7 +15,8 @@ import copy
 from modfit import MParameter, MParameters
 
 
-class LightEvent: #designates light distribution starting from some moment to the next lightevent
+class LightEvent: 
+    #designates light distribution starting from some moment to the next lightevent
     def __init__(self, wavelength, intensity, start_time):
         #verify if thse values make any sense
        self.wavelength = wavelength
@@ -24,16 +25,24 @@ class LightEvent: #designates light distribution starting from some moment to th
         
 
 class KineticData:
-    def __init__(self, filename, probe, irradiation, intensity = 0.0, absorbance = 0.0, t_on = None, t_off = None, probe_length = 1, irradiation_length = 1, num = None, zeroed = False, src = None, skip_header = 0, skip_footer = 0, temperature = None):    
+    def __init__(self, filename, probe, irradiation, intensity = 0.0, 
+                 absorbance = 0.0, t_on = None, t_off = None, probe_length = 1, 
+                 irradiation_length = 1, num = None, zeroed = False, src = None, 
+                 skip_header = 0, skip_footer = 0, temperature = None):    
         if(src is None):
             #inport data
             #data = np.loadtxt(filename) #previously used
-            data = np.genfromtxt(filename, skip_header=skip_header, skip_footer=skip_footer, dtype=float, invalid_raise = False)
+            data = np.genfromtxt(filename, skip_header=skip_header, 
+                                 skip_footer=skip_footer, dtype=float, 
+                                 invalid_raise = False)
             self.data_t = data[:,0]
             self.data_a = data[:,1]
         elif(src == "Lucas"):    #read data of meine beste freunde lucasso  !
-            avg_area = 4        #!!! set the area you want to average (because in these data wavelengths are densely probed)
-            dead_columns = 2    #two columns are not absorbances (column with numbering + time)
+            #!!! set the area you want to average (because 
+            #in these data wavelengths are densely probed)
+            avg_area = 4      
+            #two columns are not absorbances (column with numbering + time)
+            dead_columns = 2    
             tmp = pd.read_csv(filename)        
             columns = tmp.columns.values[dead_columns:]                    
             columns2 = columns.astype(np.float)
@@ -41,7 +50,7 @@ class KineticData:
             columns_names = [columns[pos] for pos in positions]
             selected_columns = tmp[columns_names]                    
             
-            self.data_t = tmp['Time'].to_numpy() 
+            self.data_t = tmp["Time"].to_numpy() 
             self.data_a = selected_columns.mean(axis = 1, skipna = True).to_numpy()       
         else: #just generate some grid and NaNs as values, ignore filename value
             if(t_on is None): raise Exception("Please set some t_on value!")
@@ -55,7 +64,8 @@ class KineticData:
         self.irradiation = irradiation
         self.intensity = intensity
         self.temperature = temperature
-        self.absorbance = absorbance #lets say for now that it is absorbance at irradiation wavelength in the ground state
+        #lets say for now that it is absorbance at irradiation wavelength in the ground state
+        self.absorbance = absorbance 
         if(t_on is None):
             self.t_on = self.data_t[0]
         else:
@@ -82,46 +92,48 @@ class KineticData:
     
     def plotYourself(self):
         plt.figure()
-        plt.plot(self.data_t, self.data_a, 'bo')
-        #plt.plot(self.data_t, residual(out2.params) + self.data_a, 'r-')
+        plt.plot(self.data_t, self.data_a, "bo")
+        #plt.plot(self.data_t, residual(out2.params) + self.data_a, "r-")
         plt.show()        
 
-    def genParameters(self): #parameters are fixed by default, unfix some of them before fitting procedure
+    def genParameters(self):
+        #parameters are fixed by default, unfix some of them before fitting procedure
         params = MParameters()
-        numstring = ''
+        numstring = ""
         if(self.num is not None):
-            numstring = '_' + str(self.num) + '_'
-        params.add(MParameter(numstring+'probe', value=float(self.probe), vary=False, min=0))
-        params.add(MParameter(numstring+'irradiation', value=float(self.irradiation), vary=False, min=0))
-        params.add(MParameter(numstring+'intensity', value=self.intensity, vary=False, min=0))
-        params.add(MParameter(numstring+'t_on', value=self.t_on, vary=False))
-        params.add(MParameter(numstring+'t_off', value=self.t_off, vary=False))
-        params.add(MParameter(numstring+'probe_length', value=self.probe_length, vary=False, min=0))
-        params.add(MParameter(numstring+'irradiation_length', value=self.irradiation_length, vary=False, min=0)) 
-        params.add(MParameter(numstring+'absorbance', value=self.absorbance, vary=False, min=0))
-        params.add(MParameter(numstring+'temperature', value=self.temperature, vary=False, min=0)) 
+            numstring = "_" + str(self.num) + "_"
+        params.add(MParameter(numstring+"probe", value=float(self.probe), vary=False, min=0))
+        params.add(MParameter(numstring+"irradiation", value=float(self.irradiation), vary=False, min=0))
+        params.add(MParameter(numstring+"intensity", value=self.intensity, vary=False, min=0))
+        params.add(MParameter(numstring+"t_on", value=self.t_on, vary=False))
+        params.add(MParameter(numstring+"t_off", value=self.t_off, vary=False))
+        params.add(MParameter(numstring+"probe_length", value=self.probe_length, vary=False, min=0))
+        params.add(MParameter(numstring+"irradiation_length", value=self.irradiation_length, vary=False, min=0)) 
+        params.add(MParameter(numstring+"absorbance", value=self.absorbance, vary=False, min=0))
+        params.add(MParameter(numstring+"temperature", value=self.temperature, vary=False, min=0)) 
         return params
     
     def updateParameters(self, params):
         p = params.valuesdict()
-        numstring = ''
+        numstring = ""
         if(self.num is not None):
-            numstring = '_' + str(self.num) + '_'
-        self.probe = p[numstring+'probe']
-        self.irradiation = p[numstring+'irradiation']
-        self.intensity = p[numstring+'intensity']
-        self.t_on = p[numstring+'t_on']
-        self.t_off = p[numstring+'t_off']
-        self.probe_length = p[numstring+'probe_length']
-        self.irradiation_length = p[numstring+'irradiation_length']
-        self.absorbance = p[numstring+'absorbance']
-        self.temperature = p[numstring+'temperature']
+            numstring = "_" + str(self.num) + "_"
+        self.probe = p[numstring+"probe"]
+        self.irradiation = p[numstring+"irradiation"]
+        self.intensity = p[numstring+"intensity"]
+        self.t_on = p[numstring+"t_on"]
+        self.t_off = p[numstring+"t_off"]
+        self.probe_length = p[numstring+"probe_length"]
+        self.irradiation_length = p[numstring+"irradiation_length"]
+        self.absorbance = p[numstring+"absorbance"]
+        self.temperature = p[numstring+"temperature"]
   
     def gaussExp(self, t, A, tau):
         eksp = np.exp(-t/tau)
         return A * eksp
     
-    def multipleGaussExp(self, t, t0, As, taus, offset): #As and taus should be lists/tuples of the same length
+    def multipleGaussExp(self, t, t0, As, taus, offset): 
+        #As and taus should be lists/tuples of the same length
         return_value = offset
         for i in range(len(taus)):
             return_value += self.gaussExp(t-t0, As[i], taus[i])
@@ -150,15 +162,19 @@ class KineticData:
         residuals.extend(np.subtract(self.data_a[splitpoint+1:], y_model[splitpoint+1:]))
         
         #plt.figure() #for eventual diagnostics
-        #plt.plot(self.data_t[splitpoint+1:], y_model[splitpoint+1:], 'b-')
-        #plt.plot(self.data_t[splitpoint+1:], self.data_a[splitpoint+1:], 'ro')
+        #plt.plot(self.data_t[splitpoint+1:], y_model[splitpoint+1:], "b-")
+        #plt.plot(self.data_t[splitpoint+1:], self.data_a[splitpoint+1:], "ro")
         #plt.show()        
         
         return residuals
      
-    def linearBaselineCorrect(self, exp_no): #it is made to correct roughly data done without reference. it assumes linear drift during experiment time.
-        #so it will make fit of decay after t_off, and find offset. then it will assume that offset should be equal to absorbance before t_on, and 
-        #it will do linear correction. if exp_no == 0, then the last point at kinetic will be taken as offset
+    def linearBaselineCorrect(self, exp_no): 
+        #it is made to correct roughly data done without reference. 
+        #it assumes linear drift during experiment time.
+        #so it will make fit of decay after t_off, and find offset. 
+        #then it will assume that offset should be equal to absorbance 
+        #before t_on, and it will do linear correction. if exp_no == 0, then 
+        #the last point at kinetic will be taken as offset
         if exp_no == 0:
             cfactor = (self.data_a[-1] - self.data_a[0])/(len(self.data_a)-1)
             newdata = [(self.data_a[i] - cfactor*i) for i in range(len(self.data_a))]
@@ -172,16 +188,17 @@ class KineticData:
             p.add("offset", 0.0)
             p.add("t0", self.t_off, vary=False)      
             
-            mini = lmfit.Minimizer(self.residualLBC, p, nan_policy='propagate')
-            out = mini.minimize(method='leastsq')
-            offset = out.params['offset']
+            mini = lmfit.Minimizer(self.residualLBC, p, nan_policy="propagate")
+            out = mini.minimize(method="leastsq")
+            offset = out.params["offset"]
             lmfit.report_fit(out.params)
             cfactor = (offset - self.data_a[0])/(len(self.data_a)-1)
             newdata = [(self.data_a[i] - cfactor*i) for i in range(len(self.data_a))]
             self.data_a = newdata            
             
             
-class Experiment: #container for kineticdata or other future data types prepared to fit globally
+class Experiment: 
+    #container for kineticdata or other future data types prepared to fit globally
     def __init__(self):
         self.all_data = list()
         self.count = 0
@@ -211,9 +228,9 @@ class Experiment: #container for kineticdata or other future data types prepared
         
         if(num is None):
             for i in range(self.count):
-                plt.plot(self.all_data[i].data_t, self.all_data[i].data_a, 'b-')
+                plt.plot(self.all_data[i].data_t, self.all_data[i].data_a, "b-")
         else:
-            plt.plot(self.all_data[num].data_t, self.all_data[num].data_a, 'b-')
+            plt.plot(self.all_data[num].data_t, self.all_data[num].data_a, "b-")
                 
         plt.show()
 
