@@ -872,20 +872,20 @@ class Model:
             return False
         return result   
        
-    def totalA(self, cs, irradiation, length):
+    def _totalA(self, cs, irradiation, length):
         sum = 0.0
         for i in range(len(cs)):
             sum += cs[i] * self.populations[i].epsilon[irradiation]
         
         return sum * length 
     
-    def F(self, cs, irradiation, length):
-        tA = self.totalA(cs, irradiation, length)
+    def _F(self, cs, irradiation, length):
+        tA = self._totalA(cs, irradiation, length)
         return (1 - np.exp(-2.30259 * tA)) / tA
     
-    def derrivt(self, cs, t, irradiation, length, intensity):
+    def _derrivt(self, cs, t, irradiation, length, intensity):
         out = list()
-        Ftmp = self.F(cs, irradiation, length)
+        Ftmp = self._F(cs, irradiation, length)
         #for every population add contributions from different populations 
         #if there is some process
         for c in range(len(cs)): 
@@ -907,7 +907,7 @@ class Model:
             out.append(ct)
         return out #returns list with derrivatives of cs
     
-    def absorbance(self, cs, length, wavelength): 
+    def _absorbance(self, cs, length, wavelength): 
         #calculate absorbance for some concentrations, wavelength and cuvette length
         out_abs = 0.0
         for x in range(len(cs)):
@@ -966,11 +966,11 @@ class Model:
         if(splitpoint1 != 0):
             grid1 = data.data_t[:splitpoint1+1]
             # by adding hmax specify max step
-            y1 = odeint(self.derrivt, initial_conditions, grid1, 
+            y1 = odeint(self._derrivt, initial_conditions, grid1, 
                         args=(data.irradiation,data.irradiation_length,0.0)) 
             initial_conditions = y1[-1]
             if(population_num is None):
-                abs1 = [self.absorbance(cse, data.probe_length, data.probe) for cse in y1]
+                abs1 = [self._absorbance(cse, data.probe_length, data.probe) for cse in y1]
             else:
                 #mało eleganckie, ale zwykłe y1[:,pop_num] nie dziala...
                 abs1 = [cse[population_num] for cse in y1] 
@@ -978,11 +978,11 @@ class Model:
         
         grid2 = data.data_t[splitpoint1:splitpoint2+1]
         # by adding hmax specify max step
-        y2 = odeint(self.derrivt, initial_conditions, grid2, 
+        y2 = odeint(self._derrivt, initial_conditions, grid2, 
                     args=(data.irradiation,data.irradiation_length,data.intensity)) 
         initial_conditions = y2[-1]
         if(population_num is None):
-            abs2 = [self.absorbance(cse, data.probe_length, data.probe) for cse in y2]
+            abs2 = [self._absorbance(cse, data.probe_length, data.probe) for cse in y2]
         else:
             abs2 = [cse[population_num] for cse in y2]
         abs_out += abs2
@@ -990,10 +990,10 @@ class Model:
         if(splitpoint2 != len(data.data_t)-1):
             grid3 = data.data_t[splitpoint2:]
             # by adding hmax specify max step
-            y3 = odeint(self.derrivt, initial_conditions, grid3, 
+            y3 = odeint(self._derrivt, initial_conditions, grid3, 
                         args=(data.irradiation,data.irradiation_length,0.0)) 
             if(population_num is None):
-                abs3 = [self.absorbance(cse, data.probe_length, data.probe) for cse in y3]
+                abs3 = [self._absorbance(cse, data.probe_length, data.probe) for cse in y3]
             else:
                 abs3 = [cse[population_num] for cse in y3]
             abs_out += abs3[1:]
