@@ -1,3 +1,10 @@
+"""
+Contains classes based on lmfit ones, extending their
+functionality for the purpose of this package.
+"""
+__authors__ = ["Stanisław Niziński"]
+#__authors__.append("Add yourself my friend...")
+
 import numpy as np
 import lmfit
 import copy

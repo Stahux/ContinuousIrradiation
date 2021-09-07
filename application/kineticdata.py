@@ -1,3 +1,12 @@
+"""
+Implements classes used to contain the data, and to do some simple data
+manipulations. Especially, Experiment class is intended to contain full
+set of data, which posses some integrity (or just shared experimental
+conditions) and are meant to be modelled together.
+"""
+__authors__ = ["Stanisław Niziński"]
+#__authors__.append("Add yourself my friend...")
+
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt

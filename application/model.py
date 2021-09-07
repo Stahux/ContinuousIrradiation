@@ -1,6 +1,10 @@
-#run to install scipy: conda install -c anaconda scipy
-#and this: conda install -c conda-forge matplotlib
-#and this: conda install -c conda-forge lmfit
+"""
+Implements Model class, which intention is similar to lmfit.Model.
+However, this Model class is built separately from the scratch and
+applies only to ModFit (has nothing to do with lmfit.Minimizer).
+"""
+__authors__ = ["Stanisław Niziński"]
+#__authors__.append("Add yourself my friend...")
 
 import numpy as np
 from scipy.integrate import odeint
