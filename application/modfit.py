@@ -175,9 +175,10 @@ class ModFit(lmfit.Minimizer):
             model.genParameters()
             super().__init__(self.residual, 
                  model.genParameters() + experiment.genParameters(), 
-                 nan_policy="propagate")  
+                 iter_cb=self._iterCb, nan_policy="propagate")  
         else:
-            super().__init__(self.residual, params, nan_policy="propagate")  
+            super().__init__(self.residual, params, 
+                 iter_cb=self._iterCb, nan_policy="propagate")  
           
         self.model = copy.deepcopy(model)
         self.experiment = copy.deepcopy(experiment)
@@ -191,6 +192,17 @@ class ModFit(lmfit.Minimizer):
     def normalPenalty(value, expected, error, weight):
         #experimental penalty to keep param close within its error
         return weight/ModFit.normalDistribution(value, expected, error)
+    
+    def _iterCb(self, params, iter, resid, *args, **kws):
+        """
+        Iteration callback function, optional.
+        """
+        if(iter%1000 == 0):
+            print("Iteration number: %i" % iter)
+        if(False): #to abort
+            return True
+        else: #to continue
+            return None
     
     def residual(self, params):
         """
@@ -252,17 +264,24 @@ class ModFit(lmfit.Minimizer):
         
         return output
     
-    def reportFit(self, params):
+    def reportFit(self, output):
         """
         Print fit report, just like in lmfit but with some additional info.
         
         Parameters
         ----------
-        params : Parameters or MParameters
+        output : Parameters or MParameters or lmfit.MinimizerResult
             Parameters obtained from the last optiumization.
             
         """
-        lmfit.report_fit(params) 
+        if(isinstance(output,lmfit.minimizer.MinimizerResult)):
+            params = output.params
+        elif(isinstance(output,lmfit.Parameters)):
+            params = output
+        else:
+            raise Exception("Cant recognize object passed to reportFit!")
+
+        print(lmfit.fit_report(output)) 
         
         for key, param in params.items():
             if(isinstance(param, MParameter)):

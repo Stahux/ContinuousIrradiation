@@ -105,7 +105,7 @@ def fitModel():
     params1.pretty_print()
     
     modfit1 = ModFit(model1, experiment1, params1)
-    out1 = modfit1.fit(maxfev = 10000)
+    out1 = modfit1.fit()
     params2 = out1.params    
     
     experiment1.updateParameters(params2)
@@ -115,7 +115,7 @@ def fitModel():
         model1.plotYourself(experiment1, i, x_max=200)
     model1.plotYourself(experiment1, x_max=200)
     
-    modfit1.reportFit(params2)    
+    modfit1.reportFit(out1)    
     
 fitModel()
 
