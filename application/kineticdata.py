@@ -155,7 +155,7 @@ class KineticData:
         
         splitpoint = 0
         for i in range(len(self.data_t)-1): #split data between on and off light regime
-            if self.data_t[i] <= self.t_off and self.t_off < self.data_t[i+1]:
+            if(self.data_t[i] <= self.t_off and self.t_off < self.data_t[i+1]):
                 splitpoint = i
                 break
         
@@ -175,7 +175,7 @@ class KineticData:
         #then it will assume that offset should be equal to absorbance 
         #before t_on, and it will do linear correction. if exp_no == 0, then 
         #the last point at kinetic will be taken as offset
-        if exp_no == 0:
+        if(exp_no == 0):
             cfactor = (self.data_a[-1] - self.data_a[0])/(len(self.data_a)-1)
             newdata = [(self.data_a[i] - cfactor*i) for i in range(len(self.data_a))]
             self.data_a = newdata

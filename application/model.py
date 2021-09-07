@@ -30,11 +30,11 @@ from modfit import MParameter, MParameters
 
 
 def isIdentifier(identifier): #check if string is valid python identifier
-    if not(isinstance(identifier, str)):
+    if(not(isinstance(identifier, str))):
         return False
-    if not(identifier.isidentifier()):
+    if(not(identifier.isidentifier())):
         return False
-    if keyword.iskeyword(identifier):
+    if(keyword.iskeyword(identifier)):
         return False
     return True
 
@@ -52,7 +52,7 @@ class ModPopulation:
     def remove(self, model): 
         #before calling ensure that all arrows with this population are removed,
         #in other case there will be exception!
-        if len(self.arrows) != 0:
+        if(len(self.arrows) != 0):
             raise Exception("Attempted to invalid population removal!!")
         n = model.populations.index(self)
         model.populations.pop(n)
@@ -143,31 +143,31 @@ class ModProcess:
         x_cross = (b_point - b_p1p2) / (a_p1p2 - a_point) #find crossing point
         y_cross = a_p1p2 * x_cross + b_p1p2
         
-        if self.p1.x() >= self.p2.x(): #check if crossing point is between p1 and p2
-            if x_cross <= self.p1.x() and x_cross >= self.p2.x():
+        if(self.p1.x() >= self.p2.x()): #check if crossing point is between p1 and p2
+            if(x_cross <= self.p1.x() and x_cross >= self.p2.x()):
                 cond1 = True
             else:
                 cond1 = False
         else:
-            if x_cross <= self.p2.x() and x_cross >= self.p1.x():
+            if(x_cross <= self.p2.x() and x_cross >= self.p1.x()):
                 cond1 = True
             else:
                 cond1 = False  
                 
-        if self.p1.y() >= self.p2.y(): #check if crossing point is between p1 and p2
-            if y_cross <= self.p1.y() and y_cross >= self.p2.y():
+        if(self.p1.y() >= self.p2.y()): #check if crossing point is between p1 and p2
+            if(y_cross <= self.p1.y() and y_cross >= self.p2.y()):
                 cond2 = True
             else:
                 cond2 = False
         else:
-            if y_cross <= self.p2.y() and y_cross >= self.p1.y():
+            if(y_cross <= self.p2.y() and y_cross >= self.p1.y()):
                 cond2 = True
             else:
                 cond2 = False                 
             
         
         dist = math.sqrt(math.pow(float(point.x()) - x_cross,2)+math.pow(float(point.y()) - y_cross,2)) 
-        if dist <= self.dist_treshold:
+        if(dist <= self.dist_treshold):
             cond3 = True
         else:
             cond3 = False
@@ -190,7 +190,7 @@ class ModThermal(ModProcess):
         full_length = math.sqrt(diff.x()*diff.x() + diff.y()*diff.y())
         iters = math.floor(full_length / fragm_len)
         unit_vect = diff * fragm_len / full_length #piece of line used to render whole curve
-        if diff.x() >= 0:
+        if(diff.x() >= 0):
             angle = math.asin(diff.y() / math.sqrt(diff.x()*diff.x() + diff.y()*diff.y()))
         else:
             angle = math.pi - math.asin(diff.y() / math.sqrt(diff.x()*diff.x() + diff.y()*diff.y()))
@@ -206,7 +206,7 @@ class ModThermal(ModProcess):
         painter.drawPath(path)
             
         diff = p1 - p2 #potrzebne do zrobienia grota strzalki  
-        if diff.x() >= 0:
+        if(diff.x() >= 0):
             angle = math.asin(diff.y() / math.sqrt(diff.x()*diff.x() + diff.y()*diff.y()))
         else:
             angle = math.pi - math.asin(diff.y() / math.sqrt(diff.x()*diff.x() + diff.y()*diff.y()))
@@ -250,7 +250,7 @@ class ModThermalEyring(ModProcess):
         full_length = math.sqrt(diff.x()*diff.x() + diff.y()*diff.y())
         iters = math.floor(full_length / fragm_len)
         unit_vect = diff * fragm_len / full_length #piece of line used to render whole curve
-        if diff.x() >= 0:
+        if(diff.x() >= 0):
             angle = math.asin(diff.y() / math.sqrt(diff.x()*diff.x() + diff.y()*diff.y()))
         else:
             angle = math.pi - math.asin(diff.y() / math.sqrt(diff.x()*diff.x() + diff.y()*diff.y()))
@@ -266,7 +266,7 @@ class ModThermalEyring(ModProcess):
         painter.drawPath(path)
             
         diff = p1 - p2 #potrzebne do zrobienia grota strzalki  
-        if diff.x() >= 0:
+        if(diff.x() >= 0):
             angle = math.asin(diff.y() / math.sqrt(diff.x()*diff.x() + diff.y()*diff.y()))
         else:
             angle = math.pi - math.asin(diff.y() / math.sqrt(diff.x()*diff.x() + diff.y()*diff.y()))
@@ -292,7 +292,7 @@ class ModRadiative(ModProcess):
             
         diff = p1 - p2 #tym razem potrzebne do zrobienia grota strzalki
         
-        if diff.x() >= 0:
+        if(diff.x() >= 0):
             angle = math.asin(diff.y() / math.sqrt(diff.x()*diff.x() + diff.y()*diff.y()))
         else:
             angle = math.pi - math.asin(diff.y() / math.sqrt(diff.x()*diff.x() + diff.y()*diff.y()))
@@ -381,23 +381,23 @@ class ModelWindow(QWidget):
     def button1Func(self): #creates new population
         found = False #ensure that new name is unique
         for elem in self.model.populations:
-            if elem.name == self.text1.text():
+            if(elem.name == self.text1.text()):
                 found = True
                 
         for elem in self.model.processes:
-            if elem.name == self.text1.text():
+            if(elem.name == self.text1.text()):
                 found = True
                 
-        if not(isIdentifier(self.text1.text())): #it has to be a valid python id
+        if(not(isIdentifier(self.text1.text()))): #it has to be a valid python id
             found = True
             
-        if found == False and len(self.text1.text()) > 0:
+        if(found == False and len(self.text1.text()) > 0):
             self.model.addPopulation(ModPopulation(self.text1.text()))
             self.text1.setText("")
             self.repaint()
 
     def button2Func(self): #adds new epsilon entry to population
-        if self.pop_edit != False:
+        if(self.pop_edit != False):
             added_row = self.eps_table.rowCount()
             self.eps_table.setRowCount(added_row + 1)
             tmp1 = QtWidgets.QTableWidgetItem("")
@@ -413,7 +413,7 @@ class ModelWindow(QWidget):
         for row in range(num_rows):
             tmp_item1 = self.eps_table.item(row, 0).text()
             tmp_item2 = self.eps_table.item(row, 1).text()
-            if not(self.isStrNumber(tmp_item1) and self.isStrNumber(tmp_item2)):
+            if(not(self.isStrNumber(tmp_item1) and self.isStrNumber(tmp_item2))):
                 continue
             new_dict[float(tmp_item1)] = float(tmp_item2)
         self.pop_edit.epsilon = new_dict
@@ -421,16 +421,16 @@ class ModelWindow(QWidget):
         self.repaint()
         
     def button31Func(self): #deletes population if possible
-        if len(self.pop_edit.arrows) == 0:
+        if(len(self.pop_edit.arrows) == 0):
             self.pop_edit.remove(self.model)
             self.pop_edit = False
         self.repaint()
     
     def button4Func(self): #finished edition of process
-        if self.isStrNumber(self.text_proc.text()):
-            if self.proc_edit.type == "k":
+        if(self.isStrNumber(self.text_proc.text())):
+            if(self.proc_edit.type == "k"):
                 self.proc_edit.k = float(self.text_proc.text())
-            elif self.proc_edit.type == "fi":
+            elif(self.proc_edit.type == "fi"):
                 self.proc_edit.fi = float(self.text_proc.text())    
             self.proc_edit = False
             self.text_proc.setText("")
@@ -445,17 +445,17 @@ class ModelWindow(QWidget):
     def button5Func(self): #adds process and starts selection of connected populations
         found = False #ensure that new name is unique
         for elem in self.model.processes:
-            if elem.name == self.text5.text():
+            if(elem.name == self.text5.text()):
                 found = True
             
         for elem in self.model.populations:
-            if elem.name == self.text5.text():
+            if(elem.name == self.text5.text()):
                 found = True
                 
-        if not(isIdentifier(self.text5.text())): #it has to be a valid python id
+        if(not(isIdentifier(self.text5.text()))): #it has to be a valid python id
             found = True
             
-        if found == False and len(self.text5.text()) > 0:
+        if(found == False and len(self.text5.text()) > 0):
             self.process_adding = True
             self.repaint()
         
@@ -483,7 +483,7 @@ class ModelWindow(QWidget):
         self.button4.setGeometry(10, 160+150, 100, 30)
         self.button41.setGeometry(10, 190+150, 100, 30)
         
-        if self.pop_edit == False: #population edit menu
+        if(self.pop_edit == False): #population edit menu
             self.label2.setVisible(False)
             self.eps_table.setVisible(False)
             self.button2.setVisible(False)
@@ -496,7 +496,7 @@ class ModelWindow(QWidget):
             self.button3.show()
             self.button31.show()
             
-        if self.proc_edit == False:
+        if(self.proc_edit == False):
             self.button4.setVisible(False)
             self.button41.setVisible(False)
             self.text_proc.setVisible(False)
@@ -516,7 +516,7 @@ class ModelWindow(QWidget):
         rmpen = QtGui.QPen()
         rmpen.setWidth(3)
         colorum = QtGui.QColor(100,200,0)
-        if self.process_adding != False:
+        if(self.process_adding != False):
             colorum = QtGui.QColor(0,200,255)
         rmpen.setBrush(colorum)
         painter.setPen(rmpen)
@@ -525,7 +525,7 @@ class ModelWindow(QWidget):
         #should also call paintYourself function of the population, 
         #just like in case of processss
         for r in self.model.populations: 
-            if self.mousepressed is r:
+            if(self.mousepressed is r):
                 tmprect = copy.deepcopy(r.rect)
                 tmprect.setX(tmprect.x() + self.mouse_dx)
                 tmprect.setY(tmprect.y() + self.mouse_dy)
@@ -548,15 +548,15 @@ class ModelWindow(QWidget):
         
     def eventFilter(self, obj, event):
         #TODO: change and check type to isinstance!
-        if event.type() == QtCore.QEvent.MouseMove:
+        if(event.type() == QtCore.QEvent.MouseMove):
             mouse_position = event.pos()
-            if self.mousepressed != False:
+            if(self.mousepressed != False):
                 self.mouse_dx = mouse_position.x() - self.ref_mouse.x()
                 self.mouse_dy = mouse_position.y() - self.ref_mouse.y()
                 self.repaint()
             
-        elif event.type() == QtCore.QEvent.MouseButtonRelease:
-            if self.mousepressed != False:
+        elif(event.type() == QtCore.QEvent.MouseButtonRelease):
+            if(self.mousepressed != False):
                 self.mousepressed.rect.setX(self.mousepressed.rect.x() + self.mouse_dx)
                 self.mousepressed.rect.setY(self.mousepressed.rect.y() + self.mouse_dy)
                 self.mousepressed.rect.setWidth(self.mousepressed.rect_w)
@@ -565,59 +565,59 @@ class ModelWindow(QWidget):
                 self.mouse_dy = 0
                 self.mousepressed = False
                 self.repaint()
-        elif event.type() == QtCore.QEvent.MouseButtonPress:
+        elif(event.type() == QtCore.QEvent.MouseButtonPress):
             for r in self.model.populations:
-                if r.rect.contains(event.pos()):
+                if(r.rect.contains(event.pos())):
                     self.mousepressed = r
                     self.ref_mouse = event.pos()
                     break
                     
             #finalize arrow adding process
-            if self.process_adding != True and self.process_adding != False:
+            if(self.process_adding != True and self.process_adding != False):
                 for r in self.model.populations:
                     found = False #if user clicked something useful
-                    if r.rect.contains(event.pos()):
-                        if not(r is self.process_adding):
+                    if(r.rect.contains(event.pos())):
+                        if(not(r is self.process_adding)):
                             found = r
                             break
-                if found == False:
+                if(found == False):
                     self.process_adding = False
                 else: #finalize arrow from  self.process_adding to found
-                    if self.select_process.currentIndex() == 0: # Thermal
+                    if(self.select_process.currentIndex() == 0): # Thermal
                         tmp_arrow = ModThermal(self.text5.text(), self.process_adding, found)
-                    elif self.select_process.currentIndex() == 1: # Light activated
+                    elif(self.select_process.currentIndex() == 1): # Light activated
                         #asumes, that there are only 2 kinds of arrows, which can be added!
                         tmp_arrow = ModRadiative(self.text5.text(), self.process_adding, found) 
                     self.model.addProcess(tmp_arrow)
                     self.text5.setText("")     
                     self.process_adding = False
 
-            if self.process_adding == True: #process arrow adding, first popul needs to be selected
+            if(self.process_adding == True): #process arrow adding, first popul needs to be selected
                 for r in self.model.populations:
                     found = False #if user clicked something useful
-                    if r.rect.contains(event.pos()):
+                    if(r.rect.contains(event.pos())):
                         found = True
                         self.process_adding = r
                         break
-                if found == False:
+                if(found == False):
                     self.process_adding = False
                 
             self.repaint()
         
-        elif event.type() == QtCore.QEvent.MouseButtonDblClick:
-            if self.proc_edit == False and self.pop_edit == False: #should edit process?
+        elif(event.type() == QtCore.QEvent.MouseButtonDblClick):
+            if(self.proc_edit == False and self.pop_edit == False): #should edit process?
                 for p in self.model.processes:
-                    if p.contains(event.pos()):
+                    if(p.contains(event.pos())):
                         self.proc_edit = p
                         self.label2.setText("Edit " + p.type + " for " + p.name + " :")
-                        if p.type == "k":
+                        if(p.type == "k"):
                             self.text_proc.setText(str(p.k))
-                        elif p.type == "fi":
+                        elif(p.type == "fi"):
                             self.text_proc.setText(str(p.fi))  
                         break
-            if self.pop_edit == False and self.proc_edit == False: #should edit population?
+            if(self.pop_edit == False and self.proc_edit == False): #should edit population?
                 for r in self.model.populations:
-                    if r.rect.contains(event.pos()):
+                    if(r.rect.contains(event.pos())):
                         self.pop_edit = r
                         self.label2.setText("Edit eps for " + r.name + " :")
                         self.eps_table.setRowCount(len(r.epsilon))
@@ -693,11 +693,11 @@ class Model:
             raise Exception("Values given in setInitial() are not correct!")
         found = False
         for elem in self.populations:            
-            if elem.name == name:
+            if(elem.name == name):
                 elem.initial = value
                 found = True
                 break
-        if found == False:
+        if(found is False):
             raise Exception("Cannot find and set initial for requested population!")
         #before fit program must check if all populations have initials of the 
         #same length. if not then exception!
@@ -709,16 +709,16 @@ class Model:
         for elem in self.populations: 
             is_sourcethermstate = False
             for arr in elem.arrows:
-                if arr.source is elem and ( arr.type == "k" or arr.type == "ke"):
+                if(arr.source is elem and ( arr.type == "k" or arr.type == "ke")):
                     is_sourcethermstate = True
-            if is_sourcethermstate == True:
+            if(is_sourcethermstate == True):
                 elem.initial = 0.0
             else:
                 elem.initial = 1.0   
                         
         init_count = 0
         for x in self.populations:
-            if x.initial != 0.0:
+            if(x.initial != 0.0):
                 init_count += 1
         if(init_count != 1):
             raise Exception("Cannot determine ground state of the model! Change model"
@@ -752,10 +752,10 @@ class Model:
             #check if soeme initial populations are determined if no, then do it yourself
             max_initial = 0.0    
             for elem in self.populations:    
-                if elem.initial > max_initial:
+                if(elem.initial > max_initial):
                     max_initial = elem.initial
                 
-            if max_initial == 0.0:
+            if(max_initial == 0.0):
                 self.configureInitial()
                 
             #somehow initial conditions also depend on model, however they are 
@@ -804,11 +804,11 @@ class Model:
                 elem.epsilon[l] = p[elem.name + "__" + str(l).replace(".","_")]
             
         for elem in self.processes:
-            if elem.type == "fi":
+            if(elem.type == "fi"):
                 elem.fi = p[elem.name + "__fi"]    
-            elif elem.type == "k":
+            elif(elem.type == "k"):
                 elem.k = p[elem.name + "__k"]     
-            elif elem.type == "ke": #temperature-dependent rate constant!
+            elif(elem.type == "ke"): #temperature-dependent rate constant!
                 #negative energy barrier makes no sense!
                 elem.deltaH = p[elem.name + "__deltaH"] 
                 elem.deltaS = p[elem.name + "__deltaS"] 
@@ -892,16 +892,16 @@ class Model:
             ct = 0.0
             for arr in self.populations[c].arrows:
                 cont = 0.0
-                if self.populations[c] is arr.source:
+                if(self.populations[c] is arr.source):
                     cont = - cs[c]
-                elif self.populations[c] is arr.target:
+                elif(self.populations[c] is arr.target):
                     cont = cs[self.populations.index(arr.source)]
-                if arr.type == "k":
+                if(arr.type == "k"):
                     cont *= arr.k
-                elif arr.type == "ke":
+                elif(arr.type == "ke"):
                     #remember to caculate it before otherwise result will be incorrect
                     cont *= arr.k 
-                elif arr.type == "fi":
+                elif(arr.type == "fi"):
                     cont *= arr.fi * Ftmp * intensity * arr.source.epsilon[irradiation] * length 
                 ct += cont
             out.append(ct)
@@ -941,19 +941,19 @@ class Model:
             
         splitpoint1 = -1
         for i in range(len(data.data_t)-1): #split data between on and off light regime
-            if data.data_t[i] <= data.t_on and data.t_on < data.data_t[i+1]:
+            if(data.data_t[i] <= data.t_on and data.t_on < data.data_t[i+1]):
                 splitpoint1 = i
                 break
             
         splitpoint2 = -1
         for i in range(len(data.data_t)-1): #split data between on and off light regime
-            if data.data_t[i] <= data.t_off and data.t_off < data.data_t[i+1]:
+            if(data.data_t[i] <= data.t_off and data.t_off < data.data_t[i+1]):
                 splitpoint2 = i
                 break
        
-        if splitpoint1 == -1 or splitpoint1 == len(data.data_t)-1:
+        if(splitpoint1 == -1 or splitpoint1 == len(data.data_t)-1):
             splitpoint1 = 0
-        if splitpoint2 == -1 or splitpoint2 <= splitpoint1:
+        if(splitpoint2 == -1 or splitpoint2 <= splitpoint1):
             splitpoint2 = len(data.data_t)-1
             
         abs_out = list()    
@@ -963,7 +963,7 @@ class Model:
                 #update temperature for temperature dependent process
                 arr.getK(data.temperature) 
         
-        if splitpoint1 != 0:
+        if(splitpoint1 != 0):
             grid1 = data.data_t[:splitpoint1+1]
             # by adding hmax specify max step
             y1 = odeint(self.derrivt, initial_conditions, grid1, 
@@ -987,7 +987,7 @@ class Model:
             abs2 = [cse[population_num] for cse in y2]
         abs_out += abs2
         
-        if splitpoint2 != len(data.data_t)-1:
+        if(splitpoint2 != len(data.data_t)-1):
             grid3 = data.data_t[splitpoint2:]
             # by adding hmax specify max step
             y3 = odeint(self.derrivt, initial_conditions, grid3, 
@@ -1000,11 +1000,11 @@ class Model:
             
         output_data = copy.deepcopy(data)    
         abs_out = np.array(abs_out)
-        if data.zeroed:
+        if(data.zeroed):
             abs_out = abs_out - abs_out[0]
         
         output_data.data_a = abs_out
-        if len(abs_out) != len(output_data.data_t):
+        if(len(abs_out) != len(output_data.data_t)):
             raise Exception("Inconsistent generated data!")
             
         return output_data
@@ -1040,7 +1040,7 @@ class Model:
                          str(experiment.all_data[i].probe) + " nm.")
             plt.legend(fontsize="x-small", frameon=False, labelspacing=0.1)
         else:
-            if num < experiment.count: # and num < tmp.count #dokoncz!!!!!!!!!!!!
+            if(num < experiment.count): # and num < tmp.count #dokoncz!!!!!!!!!!!!
                 tmp = self.solveModelSingle(experiment.all_data[num])
                 plt.plot(experiment.all_data[num].data_t, experiment.all_data[num].data_a, "bo")
                 plt.plot(tmp.data_t, tmp.data_a, "r-")
