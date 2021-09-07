@@ -194,7 +194,8 @@ class ModThermal(ModProcess):
             angle = math.asin(diff.y() / math.sqrt(diff.x()*diff.x() + diff.y()*diff.y()))
         else:
             angle = math.pi - math.asin(diff.y() / math.sqrt(diff.x()*diff.x() + diff.y()*diff.y()))
-        perp_vect = QtCore.QPointF(modamp*math.cos(angle+math.pi/2), modamp*math.sin(angle+math.pi/2))
+        perp_vect = QtCore.QPointF(modamp*math.cos(angle+math.pi/2), 
+                                   modamp*math.sin(angle+math.pi/2))
         
         path = QtGui.QPainterPath(p1)
         
@@ -212,8 +213,10 @@ class ModThermal(ModProcess):
         
         angle_diff = math.pi / 10.0 #determines shape of the arrow
         length = 10.0 #determines shape of the arrow
-        p_arr1 = QtCore.QPointF(length*math.cos(angle+angle_diff), length*math.sin(angle+angle_diff))
-        p_arr2 = QtCore.QPointF(length*math.cos(angle-angle_diff), length*math.sin(angle-angle_diff))
+        p_arr1 = QtCore.QPointF(length*math.cos(angle+angle_diff), 
+                                length*math.sin(angle+angle_diff))
+        p_arr2 = QtCore.QPointF(length*math.cos(angle-angle_diff), 
+                                length*math.sin(angle-angle_diff))
         
         painter.drawLine(p2, p2 + p_arr1)
         painter.drawLine(p2, p2 + p_arr2)
@@ -228,11 +231,13 @@ class ModThermalEyring(ModProcess):
         self.deltaH = 10 #enthalpy of activation (with two plusses in the upper index), [kcal/mol]
         self.deltaS = 0.001 #entropy of activation (with two plusses in the upper index) [kcal/mol/K]
 
-    def getK(self, temperature): #calc rate constant based on params and temp. (absolute not Celcius!!!)
+    def getK(self, temperature): 
+        #calc rate constant based on params and temp. (absolute not Celcius!!!)
         R_gas = 0.00198720425864083 #gas constant [kcal/K/mol]
         h_planck = 6.62607015E-34 #planck [J*s]
         kb = 1.380649E-23 #boltzmann constant [J/K]
-        self.k = (self.kappa*kb*temperature/h_planck) * np.exp(self.deltaS/R_gas - self.deltaH/(R_gas*temperature))
+        self.k = (self.kappa*kb*temperature/h_planck) * np.exp(self.deltaS/R_gas \
+                 - self.deltaH/(R_gas*temperature))
         return self.k
 
     def paintYourself(self, painter):
@@ -249,7 +254,8 @@ class ModThermalEyring(ModProcess):
             angle = math.asin(diff.y() / math.sqrt(diff.x()*diff.x() + diff.y()*diff.y()))
         else:
             angle = math.pi - math.asin(diff.y() / math.sqrt(diff.x()*diff.x() + diff.y()*diff.y()))
-        perp_vect = QtCore.QPointF(modamp*math.cos(angle+math.pi/2), modamp*math.sin(angle+math.pi/2))
+        perp_vect = QtCore.QPointF(modamp*math.cos(angle+math.pi/2), 
+                                   modamp*math.sin(angle+math.pi/2))
         
         path = QtGui.QPainterPath(p1)
         
@@ -267,8 +273,10 @@ class ModThermalEyring(ModProcess):
         
         angle_diff = math.pi / 10.0 #determines shape of the arrow
         length = 10.0 #determines shape of the arrow
-        p_arr1 = QtCore.QPointF(length*math.cos(angle+angle_diff), length*math.sin(angle+angle_diff))
-        p_arr2 = QtCore.QPointF(length*math.cos(angle-angle_diff), length*math.sin(angle-angle_diff))
+        p_arr1 = QtCore.QPointF(length*math.cos(angle+angle_diff), 
+                                length*math.sin(angle+angle_diff))
+        p_arr2 = QtCore.QPointF(length*math.cos(angle-angle_diff), 
+                                length*math.sin(angle-angle_diff))
         
         painter.drawLine(p2, p2 + p_arr1)
         painter.drawLine(p2, p2 + p_arr2)        
@@ -291,8 +299,10 @@ class ModRadiative(ModProcess):
         
         angle_diff = 3.14 / 10.0
         length = 10.0
-        p_arr1 = QtCore.QPointF(length*math.cos(angle+angle_diff), length*math.sin(angle+angle_diff))
-        p_arr2 = QtCore.QPointF(length*math.cos(angle-angle_diff), length*math.sin(angle-angle_diff))
+        p_arr1 = QtCore.QPointF(length*math.cos(angle+angle_diff),
+                                length*math.sin(angle+angle_diff))
+        p_arr2 = QtCore.QPointF(length*math.cos(angle-angle_diff),
+                                length*math.sin(angle-angle_diff))
         
         painter.drawLine(p1, p2)
         painter.drawLine(p2, p2 + p_arr1)
@@ -335,10 +345,13 @@ class ModelWindow(QWidget):
 
         self.installEventFilter(self)
 
-        self.mousepressed = False #indicates which population is being moved, or False if none
-        self.mouse_dx = 0 #markers of relative mouse move from the moment of click
+        #indicates which population is being moved, or False if none
+        self.mousepressed = False 
+        #markers of relative mouse move from the moment of click
+        self.mouse_dx = 0 
         self.mouse_dy = 0
-        self.ref_mouse = QtCore.QPoint(0,0) #marker of mouse position when population was clicked
+        #marker of mouse position when population was clicked
+        self.ref_mouse = QtCore.QPoint(0,0) 
         
         self.pop_edit = False #to edit populatiions
         self.label2 = QtWidgets.QLabel("", self)
@@ -362,7 +375,8 @@ class ModelWindow(QWidget):
         self.button41 = QtWidgets.QPushButton("Delete", self)
         self.button41.clicked.connect(self.button41Func)
         
-        self.process_adding = False #indicates that process arrow is being added (select populations)
+        #indicates that process arrow is being added (select populations)
+        self.process_adding = False
 
     def button1Func(self): #creates new population
         found = False #ensure that new name is unique
@@ -508,7 +522,8 @@ class ModelWindow(QWidget):
         painter.setPen(rmpen)
         marg = 5
         
-        #should also call paintYourself function of the population, just like in case of processss
+        #should also call paintYourself function of the population, 
+        #just like in case of processss
         for r in self.model.populations: 
             if self.mousepressed is r:
                 tmprect = copy.deepcopy(r.rect)
@@ -908,14 +923,16 @@ class Model:
         #there was major mistake, i corrected, but better check again, 
         #because error was really stupid and its late now...
         if(self.psplit == False): 
-            weighted_epsilons = [(elem.epsilon[data.irradiation] * elem.initial) for elem in self.populations]
+            weighted_epsilons = [(elem.epsilon[data.irradiation] * elem.initial) \
+                                 for elem in self.populations]
             cfactor = data.absorbance/(data.irradiation_length * sum(weighted_epsilons))
             #create initial conditions, initialize all population in the 
             #ground state, if cannot find (or more than 1), raise error
             for elem in self.populations: 
                 initial_conditions.append(elem.initial * cfactor)  
         else:
-            weighted_epsilons = [(elem.epsilon[data.irradiation] * elem.initial[data.num]) for elem in self.populations]
+            weighted_epsilons = [(elem.epsilon[data.irradiation] * elem.initial[data.num]) \
+                                 for elem in self.populations]
             cfactor = data.absorbance/(data.irradiation_length * sum(weighted_epsilons))            
             #create initial conditions, initialize all population in the
             #ground state, if cannot find (or more than 1), raise error
@@ -1006,8 +1023,9 @@ class Model:
             return_experiment.addKineticData(new_data)
         return return_experiment
     
-    def plotYourself(self, experiment, num = None, x_min = None, x_max = None,dpi = 120, title = None):
-        colors = ("b","r","g","c","m","y","C0","C1","C2","C3","C4","C5","C6","C7") * 100  #color order
+    def plotYourself(self, experiment, num = None, x_min = None, 
+                     x_max = None,dpi = 120, title = None):
+        colors = ("b","r","g","c","m","y","C0","C1","C2","C3","C4","C5","C6","C7") * 100
         plt.figure(dpi=dpi)
         
         if(num is None):
@@ -1039,13 +1057,15 @@ class Model:
             plt.xlim(right=x_max)             
         plt.show()
     
-    def plotConcentrations(self, data, population_nums = [], x_min = None, x_max = None,dpi = 80, title = None):
-        colors = ("b","r","g","c","m","y","C0","C1","C2","C3","C4","C5","C6","C7") * 100  #color order
+    def plotConcentrations(self, data, population_nums = [], x_min = None, 
+                           x_max = None,dpi = 80, title = None):
+        colors = ("b","r","g","c","m","y","C0","C1","C2","C3","C4","C5","C6","C7") * 100
         plt.figure(dpi=dpi)
         
         for num in population_nums:
             tmp = self.solveModelSingle(data,num)
-            plt.plot(tmp.data_t, tmp.data_a, colors[num]+"-", label = "Population " + self.populations[num].name)
+            plt.plot(tmp.data_t, tmp.data_a, colors[num]+"-", 
+                     label = "Population " + self.populations[num].name)
         plt.legend(fontsize="x-small", frameon=False, labelspacing=0.1)
         
         if(title is not None):
@@ -1061,7 +1081,8 @@ class Model:
         plt.show()
         
     #what it should do:
-    #1. there should be function which extract required paremeter from params, if absent then return error
+    #1. there should be function which extract required paremeter from params, 
+    #if absent then return error
     #1.1. maybe you should check if all params are there at the begining only...
     #2. implement totalA and F based on all populations
     #3. implement derrivative func based on all populations and processes
