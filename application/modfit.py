@@ -9,6 +9,7 @@ __authors__ = ["Stanisław Niziński"]
 import numpy as np
 import lmfit
 import copy
+from datetime import datetime
 from numpy import inf
 import json
 from lmfit.jsonutils import decode4js
@@ -169,7 +170,7 @@ class ModFit(lmfit.Minimizer):
         """        
         
         if(params is not None): 
-            params = self.initPenalty(params)
+            params = self._initPenalty(params)
             
         if(params is None):
             model.genParameters()
@@ -182,6 +183,9 @@ class ModFit(lmfit.Minimizer):
           
         self.model = copy.deepcopy(model)
         self.experiment = copy.deepcopy(experiment)
+        
+        self._saved_datetime = datetime.now()
+        self._callback_report_delta = 500
     
     @staticmethod
     def normalDistribution(x, mean, variance): 
@@ -197,8 +201,12 @@ class ModFit(lmfit.Minimizer):
         """
         Iteration callback function, optional.
         """
-        if(iter%1000 == 0):
-            print("Iteration number: %i" % iter)
+        if(iter%self._callback_report_delta == 0):
+            t_diff = (datetime.now() - self._saved_datetime)/self._callback_report_delta
+            if(iter != 0):
+                print("Iteration number: %i, avg time per iteration: %ims." \
+                      % (iter,t_diff.total_seconds()*1000))
+            self._saved_datetime = datetime.now()
         if(False): #to abort
             return True
         else: #to continue
@@ -234,11 +242,17 @@ class ModFit(lmfit.Minimizer):
             
         return res_vect
     
-    def initPenalty(self, params): #just set third val in user_data to expected value
+    def _initPenalty(self, params): #just set third val in user_data to expected value
         params = params.copy()
         for key, param in params.items():
             if(isinstance(param, MParameter)):
-                param.user_data = (param.user_data[0], param.user_data[1], param.value)
+                if(param.user_data[0] is not None):
+                    param.user_data = (param.user_data[0], param.user_data[1], param.value)
+                    #to avoid strange problems with , i constrain to 5 sigmas
+                    if(param.min < param.value-5*param.user_data[0]):
+                        param.min = param.value-5*param.user_data[0]
+                    if(param.max > param.value+5*param.user_data[0]):
+                        param.max = param.value+5*param.user_data[0]
         return params
         
   
@@ -259,7 +273,7 @@ class ModFit(lmfit.Minimizer):
             Object with fit-results returned by lmfit.
         """            
         if(params is not None): 
-            params = self.initPenalty(params)
+            params = self._initPenalty(params)
         output = self.minimize(params = params, **kwargs)
         
         return output
