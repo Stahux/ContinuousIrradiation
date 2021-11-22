@@ -10,6 +10,7 @@ from kineticdata import KineticData, Experiment
 from modfit import ModFit
 import copy
 import lmfit
+import matplotlib.pyplot as plt
 
 
 model1 = Model.load('model_ABC_singlephoton_eyring.model')
@@ -98,26 +99,57 @@ def fitModel():
     params1['_8_intensity'].set(value=mw_to_intensity * 3.2, vary = True)
     params1['_9_intensity'].set(value=mw_to_intensity * 3.2, vary = True) 
     
+    """
+    #set uncertainty
+    params1['A__365_0'].set(vary=True)
+    params1['B__365_0'].set(vary=True)
+    params1['B__430_0'].set(vary=True)
+    params1['C__365_0'].set(vary=True)
+    params1['C__430_0'].set(vary=True)
+    params1['A__365_0'].penalty_std = params1['A__365_0'].value/60
+    params1['B__365_0'].penalty_std = params1['B__365_0'].value/30
+    params1['B__430_0'].penalty_std = params1['B__430_0'].value/30
+    params1['C__365_0'].penalty_std = params1['C__365_0'].value/30
+    params1['C__430_0'].penalty_std = params1['C__430_0'].value/30
+    params1['A__365_0'].penalty_weight = 10
+    params1['B__365_0'].penalty_weight = 10
+    params1['B__430_0'].penalty_weight = 10
+    params1['C__365_0'].penalty_weight = 10
+    params1['C__430_0'].penalty_weight = 10
+    """
+    
     for i in range(10):
        params1['_'+str(i)+'_intensity'].penalty_std = 3.8868e-06/10
-       params1['_'+str(i)+'_intensity'].penalty_weight = 10
+       params1['_'+str(i)+'_intensity'].penalty_weight = 5
+       #params1['_'+str(i)+'_temperature'].set(vary = True) 
+       #params1['_'+str(i)+'_temperature'].penalty_std = 0.1
+       #params1['_'+str(i)+'_temperature'].penalty_weight = 10       
 
     params1.pretty_print()
     
     modfit1 = ModFit(model1, experiment1, params1)
-    out1 = modfit1.fit()
-    params2 = out1.params    
+    out1 = modfit1.fit(method="Nelder")
+    params2 = out1.params 
     
-    experiment1.updateParameters(params2)
-    model1.updateParameters(params2)
+    modfit2 = ModFit(model1, experiment1, params2)
+    out2 = modfit2.fit()
+    params3 = out2.params     
+    
+    experiment1.updateParameters(params3)
+    model1.updateParameters(params3)
     
     for i in range(10):
         model1.plotYourself(experiment1, i, x_max=200)
     model1.plotYourself(experiment1, x_max=200)
     
-    modfit1.reportFit(out1)    
+    modfit2.reportFit(out2)    
     
-fitModel()
+    #ci = lmfit.conf_interval(modfit1, out1)
+    #lmfit.printfuncs.report_ci(ci)
+    
+    return out2, modfit2
+    
+output, minimizer = fitModel()
 
 
 
