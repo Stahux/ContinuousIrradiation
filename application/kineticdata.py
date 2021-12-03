@@ -13,6 +13,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import copy
 from modfit import MParameter, MParameters
+import lmfit
 
 
 class LightEvent: 
@@ -143,6 +144,37 @@ class KineticData:
             return_value += self.gaussExp(t-t0, As[i], taus[i])
         return return_value 
 
+    def getInitialSlope(self, points_no = 10, time_window = None, plot = False):
+        #used to calc initial slope of growing, starts at t_on
+        start_index = np.argmin(np.abs(self.data_t-self.t_on))+1
+        
+        if(time_window is not None):
+            t_end = self.data_t[start_index]+time_window
+            end_index = np.argmin(np.abs(self.data_t-t_end))
+            points_no = end_index-start_index+1
+        
+        x = self.data_t[start_index:start_index+points_no]
+        y = self.data_a[start_index:start_index+points_no]
+        
+        mod = lmfit.models.LinearModel()
+        pars = mod.guess(y, x=x)
+        out = mod.fit(y, pars, x=x)        
+        slope = out.params["slope"].value
+        
+        if(plot):
+            plt.plot(x, y, 'bo', label='raw data')
+            plt.plot(x, out.init_fit, 'k--', label='initial fit')
+            plt.plot(x, out.best_fit, 'r-', label='best fit')
+            plt.legend(loc='best')
+            plt.xlabel("Time")
+            plt.ylabel("Signal")
+            plt.grid(True, which="major", linestyle='--')
+            plt.figtext(0.6, 0.15, "slope = " + "{:.2e}".format(slope), fontdict={'size': 12})
+            plt.title("Initial slope for kinetic " + self.name)
+            plt.show()
+        
+        return slope      
+
     def residualLBC(self, params):
         p = params.valuesdict()
         nexp = int(p["nexp"])
@@ -227,15 +259,22 @@ class Experiment:
         for i in range(len(self.all_data)):
             self.all_data[i].updateParameters(params)
  
-    def plotYourself(self, num = None, dpi=150):
+    def plotYourself(self, num = None, dpi=150, 
+                     x_min = None, x_max = None, y_min = None, y_max = None,):
         plt.figure(dpi=dpi)
         if(num is None):
             for i in range(len(self.all_data)):
                 plt.plot(self.all_data[i].data_t, self.all_data[i].data_a, "-", label=self.all_data[i].name)
-            plt.legend(shadow=True, fontsize="small", labelspacing=0.1)
         else:
-            plt.plot(self.all_data[num].data_t, self.all_data[num].data_a, "b-")
+            plt.plot(self.all_data[num].data_t, self.all_data[num].data_a, "-", label=self.all_data[num].name)
                 
+        plt.legend(shadow=True, fontsize="small", labelspacing=0.1)
+        plt.xlabel("Time")
+        plt.ylabel("Signal")
+        plt.grid(True, which="major", linestyle='--')
+        #plt.grid(True, which="minor", linestyle='--')
+        plt.xlim(x_min, x_max)
+        plt.ylim(y_min, y_max)
         plt.show()
 
     def linearBaselineCorrect(self, exp_no):
