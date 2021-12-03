@@ -1018,7 +1018,7 @@ class Model:
                             "correctly and nothing is missing! Note that both "
                             "params from Experiment and Model objects are required!")
         return_experiment = Experiment()
-        for i in range(experiment.count):
+        for i in range(len(experiment.all_data)):
             new_data = self.solveModelSingle(experiment.all_data[i])
             return_experiment.addKineticData(new_data)
         return return_experiment
@@ -1030,7 +1030,7 @@ class Model:
         
         if(num is None):
             tmplist = list()
-            for i in range(experiment.count):
+            for i in range(len(experiment.all_data)):
                 tmplist.append(self.solveModelSingle(experiment.all_data[i]))
                 plt.plot(experiment.all_data[i].data_t, experiment.all_data[i].data_a, 
                          colors[i]+"-",alpha=0.5)
@@ -1040,7 +1040,7 @@ class Model:
                          str(experiment.all_data[i].probe) + " nm.")
             plt.legend(fontsize="x-small", frameon=False, labelspacing=0.1)
         else:
-            if(num < experiment.count): # and num < tmp.count #dokoncz!!!!!!!!!!!!
+            if(num < len(experiment.all_data)): # and num < tmp.count #dokoncz!!!!!!!!!!!!
                 tmp = self.solveModelSingle(experiment.all_data[num])
                 plt.plot(experiment.all_data[num].data_t, experiment.all_data[num].data_a, "bo")
                 plt.plot(tmp.data_t, tmp.data_a, "r-")

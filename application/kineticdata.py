@@ -22,13 +22,13 @@ class LightEvent:
        self.wavelength = wavelength
        self.intensity = intensity
        self.start_time = start_time
-        
+
 
 class KineticData:
     def __init__(self, filename, probe, irradiation, intensity = 0.0, 
                  absorbance = 0.0, t_on = None, t_off = None, probe_length = 1, 
                  irradiation_length = 1, num = None, zeroed = False, src = None, 
-                 skip_header = 0, skip_footer = 0, temperature = None):    
+                 skip_header = 0, skip_footer = 0, temperature = None, name = None):    
         if(src is None):
             #inport data
             #data = np.loadtxt(filename) #previously used
@@ -80,6 +80,10 @@ class KineticData:
         self.irradiation_length = irradiation_length
         
         self.num = num
+        if(name is None):
+            self.name = filename
+        else:
+            self.name = name
         self.zeroed = zeroed #if true, means that before t_on absorbance was set to zero
           
     def selectTimes(self, t_min, t_max): #TODO: checl consistency, written fast
@@ -201,45 +205,82 @@ class Experiment:
     #container for kineticdata or other future data types prepared to fit globally
     def __init__(self):
         self.all_data = list()
-        self.count = 0
+        #self.count = 0
         
     def loadKineticData(self, *args, **kwargs):
-        newdata = KineticData(*args, num = self.count, **kwargs)
+        newdata = KineticData(*args, num = len(self.all_data), **kwargs)
         self.all_data.append(newdata)
-        self.count += 1
+        #self.count += 1
         
     def addKineticData(self, kineticdata):
-        kineticdata.num = self.count
+        kineticdata.num = len(self.all_data)
         self.all_data.append(kineticdata)
-        self.count += 1
+        #self.count += 1
         
     def genParameters(self):
         generated_params = MParameters()
-        for i in range(self.count):
+        for i in range(len(self.all_data)):
             generated_params += self.all_data[i].genParameters()
         return generated_params
         
     def updateParameters(self, params): 
-        for i in range(self.count):
+        for i in range(len(self.all_data)):
             self.all_data[i].updateParameters(params)
  
     def plotYourself(self, num = None, dpi=150):
         plt.figure(dpi=dpi)
-        
         if(num is None):
-            for i in range(self.count):
-                plt.plot(self.all_data[i].data_t, self.all_data[i].data_a, "b-")
+            for i in range(len(self.all_data)):
+                plt.plot(self.all_data[i].data_t, self.all_data[i].data_a, "-", label=self.all_data[i].name)
+            plt.legend(shadow=True, fontsize="small", labelspacing=0.1)
         else:
             plt.plot(self.all_data[num].data_t, self.all_data[num].data_a, "b-")
                 
         plt.show()
 
     def linearBaselineCorrect(self, exp_no):
-        for i in range(self.count):
+        for i in range(len(self.all_data)):
             self.all_data[i].linearBaselineCorrect(exp_no)
+
+    def fuseTwoKinetics(self, kinetic1_id, kinetic2_id, delay_between):
+        #merge two kinetics into one (not do average, but connect at some point
+        #for example connect growing kinetic and decay into one kinetic
+        #at the end only merged kinetic stays in the experiment object
+        #takes kinetic attributes from kinetic1, does not compare them
+        #delay between is value by which kinetic2 is shifted compared to kinetic1
+        #delay_between=0 means that there is full temporal overlap between kinetics
+        tmp_kinetic = copy.deepcopy(self[kinetic1_id])
+        k1 = self[kinetic1_id]
+        k2 = self[kinetic2_id]
+        tmp_times = np.unique(np.concatenate([k1.data_t,delay_between+k2.data_t]))
+        #may be a good idea to project onto new grid later
+        k1_indexes = [np.where(k1.data_t==tmp_times[i])[0] for i in range(tmp_times.shape[0])]
+        k2_indexes = [np.where(delay_between+k2.data_t==tmp_times[i])[0] for i in range(tmp_times.shape[0])]
+        tmp_values = [np.average(np.concatenate([k1.data_a[k1_indexes[i]],k2.data_a[k2_indexes[i]]]))
+                                                    for i in range(tmp_times.shape[0])]
+        
+        tmp_kinetic.data_t = tmp_times
+        tmp_kinetic.data_a = tmp_values
+
+        self.all_data.remove(k1)
+        self.all_data.remove(k2)
+        self.all_data.append(tmp_kinetic)
+        
+    def splitKineticIntoTwo(self, kinetic_id, split_point): 
+        #to be implemented, idea is to take one kinetic, split into two parts
+        #delete oryginal kinetic and replace it with two parts
+        pass
             
     def __getitem__(self, i):
-        return self.all_data[i]
+        if(type(i) is str):
+            for x in self.all_data:
+                if(x.name == i):
+                    return x
+            raise IndexError("kinetic with name: " + i + " not found in experiment")
+        else:
+            return self.all_data[i]
+        #add also posibity to call them by name
+        #(if int then by number, if string then by name)
     
     #def __setitem__
     #def __getslice__

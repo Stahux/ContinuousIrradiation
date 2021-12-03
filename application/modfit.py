@@ -227,7 +227,7 @@ class ModFit(lmfit.Minimizer):
         
         res_vect = list() #here huge optimization obviously can be made
         
-        for i in range(modelled_experiment.count):
+        for i in range(len(modelled_experiment.all_data)):
             res_vect.extend(modelled_experiment.all_data[i].data_a - self.experiment.all_data[i].data_a)
         
         penalties = []
