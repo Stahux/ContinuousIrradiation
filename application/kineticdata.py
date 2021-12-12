@@ -281,6 +281,81 @@ class Experiment:
         for i in range(len(self.all_data)):
             self.all_data[i].linearBaselineCorrect(exp_no)
 
+    #simple exp fitting funcs
+    def fitExp(self, guesses = None, a_guesses = None, t0 = 0.0, fix = None):
+   
+        if(guesses == None):
+            raise Exception("Give me some guess man!")
+        if(a_guesses == None):
+            a_guesses = np.array(guesses)*0.0
+        if(fix == None):
+            fix = [False]*len(guesses) 
+
+        p = lmfit.Parameters()
+        p.add("nexp", len(guesses), vary=False)
+        for component in range(1,len(guesses)+1):
+            p.add("t"+ str(component), guesses[component-1], vary = not(fix[component-1]))
+            p.add("A"+ str(component), a_guesses[component-1])
+        p.add("t0", t0, vary = False)
+
+        p_out = self.optimize(p)
+        self.plotFit(p_out)
+        return p_out
+
+    def residual(self, params):
+        p = params.valuesdict()
+        nexp = int(p["nexp"])
+        
+        As = []
+        Taus = []
+        for component in range(1,nexp+1):
+            As.append(p["A"+ str(component)])
+            Taus.append(p["t"+ str(component)])
+        t0 = p["t0"]
+        y_model = self.multipleGaussExp(self.t, t0, As, Taus)
+
+        return np.subtract(self.a, y_model)
+    
+    def gaussExp(self, t, A, tau):
+        return A * np.exp(- t / tau)
+    
+    def multipleGaussExp(self, t, t0, As, taus): #As and taus should be lists/tuples of the same length
+        return_value = 0.0
+        for i in range(len(taus)):
+            return_value += self.gaussExp(t-t0, As[i], taus[i])
+        return return_value
+    
+    def optimize(self, params):
+        mini = lmfit.Minimizer(self.residual, params, nan_policy='propagate')
+        out = mini.leastsq()
+        #lmfit.report_fit(out.params) #robi dużo zamieszania
+        print("chisquare is " + str(out.chisqr))
+        self.last_chisqr = out.chisqr
+        return out.params
+
+    def plotFit(self, params):  
+        p = params.valuesdict()
+        nexp = int(p["nexp"])
+
+        As = []
+        Taus = []
+        for component in range(1,nexp+1):
+            As.append(p["A"+ str(component)])
+            Taus.append(p["t"+ str(component)])
+        t0 = p["t0"]
+        y_model = self.multipleGaussExp(self.t, t0, As, Taus)       
+        
+        plt.figure(figsize=(8, 6), dpi=100)
+        plt.plot(self.t, self.a, 'bo')
+        plt.plot(self.t, y_model, 'r-')
+        #plt.xlim(-1,10)
+        plt.xlabel("Delay (ps)")
+        plt.ylabel("\u0394A")
+        plt.xticks(fontsize=12)
+        plt.yticks(fontsize=12)
+        #plt.title(self.label, fontdict=18, loc="left")
+        plt.show()    
+
     def fuseTwoKinetics(self, kinetic1_id, kinetic2_id, delay_between):
         #merge two kinetics into one (not do average, but connect at some point
         #for example connect growing kinetic and decay into one kinetic
@@ -309,7 +384,12 @@ class Experiment:
         #to be implemented, idea is to take one kinetic, split into two parts
         #delete oryginal kinetic and replace it with two parts
         pass
-            
+    
+    def remove(self, kinetic_id):
+        #remove selected kinetic from experiment
+        kinetic = self[kinetic_id]
+        self.all_data.remove(kinetic)
+    
     def __getitem__(self, i):
         if(type(i) is str):
             for x in self.all_data:
