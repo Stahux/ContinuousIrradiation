@@ -60,6 +60,11 @@ class KineticData:
             self.data_t = np.linspace(t_on-10, t_off+irr_time*5, num=10000)
             self.data_a = self.data_t * np.nan
             
+        #sort the data, in case that they are not sorted!
+        order = np.argsort(self.data_t)
+        self.data_t = self.data_t[order]
+        self.data_a = self.data_a[order]
+            
         #self.light = light #later there should be array of lighevents...
         self.probe = probe #probing wavelength
         self.irradiation = irradiation
@@ -132,17 +137,113 @@ class KineticData:
         self.irradiation_length = p[numstring+"irradiation_length"]
         self.absorbance = p[numstring+"absorbance"]
         self.temperature = p[numstring+"temperature"]
-  
-    def gaussExp(self, t, A, tau):
-        eksp = np.exp(-t/tau)
-        return A * eksp
-    
+
+    #simple exp fitting funcs
+    def fitExp(self, guesses = None, a_guesses = None, t0 = 0.0, fix = None, t_min = None, t_max = None):
+        #guesses is array with tau guess values, their number determine number of exps to fit
+        #a_guesses must contain preexponential values associated with taus, mandatory guesses.shape == a_guesses.shape
+        #t_0 is t_0 value (always fixed), fix must stay None or array of booleans True if given tau must be fixed
+        #t_min and t_max may specify boundaries of the fit. that's all
+        if(guesses == None):
+            raise Exception("Give me some guess man!")
+        if(a_guesses == None):
+            a_guesses = np.array(guesses)*0.0
+        if(fix == None):
+            fix = [False]*len(guesses) 
+
+        if(t_min is None):
+            index_min = 0
+        else:
+            index_min = np.argmin(np.abs(t_min-self.data_t))
+            
+        if(t_max is None):
+            index_max = len(self.data_t)-1
+        else:
+            index_max = np.argmin(np.abs(t_max-self.data_t))
+
+        p = lmfit.Parameters()
+        p.add("nexp", len(guesses), vary=False)
+        for component in range(1,len(guesses)+1):
+            p.add("t"+ str(component), guesses[component-1], vary = not(fix[component-1]))
+            p.add("A"+ str(component), a_guesses[component-1], vary = True)
+        p.add("t0", t0, vary = False)
+        
+        p.add("index_max", index_max, vary = False)
+        p.add("index_min", index_min, vary = False)
+
+        p_out = self.optimize(p)
+        self.plotFit(p_out)
+        return p_out
+
+    def residual(self, params):
+        p = params.valuesdict()
+        nexp = int(p["nexp"])
+        index_max = int(p["index_max"])
+        index_min = int(p["index_min"])
+        
+        As = []
+        Taus = []
+        for component in range(1,nexp+1):
+            As.append(p["A"+ str(component)])
+            Taus.append(p["t"+ str(component)])
+        t0 = p["t0"]
+        y_model = self.multipleGaussExp(self.data_t[index_min:index_max+1], t0, As, Taus, 0.0)
+
+        return np.subtract(self.data_a[index_min:index_max+1], y_model)
+
     def multipleGaussExp(self, t, t0, As, taus, offset): 
         #As and taus should be lists/tuples of the same length
         return_value = offset
         for i in range(len(taus)):
             return_value += self.gaussExp(t-t0, As[i], taus[i])
         return return_value 
+    
+    def gaussExp(self, t, A, tau):
+        return A * np.exp(- t / tau)
+    
+    def optimize(self, params):
+        mini = lmfit.Minimizer(self.residual, params, nan_policy='propagate')
+        out = mini.leastsq()
+        #lmfit.report_fit(out.params) #robi dużo zamieszania
+        print("chisquare is " + str(out.chisqr))
+        self.last_chisqr = out.chisqr
+        return out.params
+
+    def plotFit(self, params):  
+        p = params.valuesdict()
+        nexp = int(p["nexp"])
+        index_max = int(p["index_max"])
+        index_min = int(p["index_min"])
+
+        As = []
+        Taus = []
+        for component in range(1,nexp+1):
+            As.append(p["A"+ str(component)])
+            Taus.append(p["t"+ str(component)])
+        t0 = p["t0"]
+        y_model = self.multipleGaussExp(self.data_t[index_min:index_max+1], t0, As, Taus, 0.0)       
+        
+        plt.figure(dpi=100)
+        plt.plot(self.data_t, self.data_a, 'bo')
+        plt.plot(self.data_t[index_min:index_max+1], y_model, 'r-')
+        plt.xlabel("Time")
+        plt.ylabel("Signal")
+        plt.grid(True, which="major", linestyle='--')
+        #plt.xticks(fontsize=12)
+        #plt.yticks(fontsize=12)
+        plt.title("Exponential fit for kinetic " + self.name)
+        
+        sum_preexps = 0.0
+        for i in range(1,nexp+1):
+            sum_preexps += p["A"+ str(i)]
+        
+        print(params)
+        desc = ""
+        for i in range(1,nexp+1):
+            contribution = 100*p["A"+str(i)]/sum_preexps
+            desc += "tau_" + str(i) + " = {a:.2e} ({b:.1f}%)\n".format(a=p["t"+str(i)], b=contribution)
+        plt.figtext(0.5, 0.7, desc, fontdict={'size': 12})
+        plt.show()
 
     def getInitialSlope(self, points_no = 10, time_window = None, plot = False):
         #used to calc initial slope of growing, starts at t_on
@@ -162,6 +263,7 @@ class KineticData:
         slope = out.params["slope"].value
         
         if(plot):
+            plt.figure(dpi=100)
             plt.plot(x, y, 'bo', label='raw data')
             plt.plot(x, out.init_fit, 'k--', label='initial fit')
             plt.plot(x, out.best_fit, 'r-', label='best fit')
@@ -280,81 +382,6 @@ class Experiment:
     def linearBaselineCorrect(self, exp_no):
         for i in range(len(self.all_data)):
             self.all_data[i].linearBaselineCorrect(exp_no)
-
-    #simple exp fitting funcs
-    def fitExp(self, guesses = None, a_guesses = None, t0 = 0.0, fix = None):
-   
-        if(guesses == None):
-            raise Exception("Give me some guess man!")
-        if(a_guesses == None):
-            a_guesses = np.array(guesses)*0.0
-        if(fix == None):
-            fix = [False]*len(guesses) 
-
-        p = lmfit.Parameters()
-        p.add("nexp", len(guesses), vary=False)
-        for component in range(1,len(guesses)+1):
-            p.add("t"+ str(component), guesses[component-1], vary = not(fix[component-1]))
-            p.add("A"+ str(component), a_guesses[component-1])
-        p.add("t0", t0, vary = False)
-
-        p_out = self.optimize(p)
-        self.plotFit(p_out)
-        return p_out
-
-    def residual(self, params):
-        p = params.valuesdict()
-        nexp = int(p["nexp"])
-        
-        As = []
-        Taus = []
-        for component in range(1,nexp+1):
-            As.append(p["A"+ str(component)])
-            Taus.append(p["t"+ str(component)])
-        t0 = p["t0"]
-        y_model = self.multipleGaussExp(self.t, t0, As, Taus)
-
-        return np.subtract(self.a, y_model)
-    
-    def gaussExp(self, t, A, tau):
-        return A * np.exp(- t / tau)
-    
-    def multipleGaussExp(self, t, t0, As, taus): #As and taus should be lists/tuples of the same length
-        return_value = 0.0
-        for i in range(len(taus)):
-            return_value += self.gaussExp(t-t0, As[i], taus[i])
-        return return_value
-    
-    def optimize(self, params):
-        mini = lmfit.Minimizer(self.residual, params, nan_policy='propagate')
-        out = mini.leastsq()
-        #lmfit.report_fit(out.params) #robi dużo zamieszania
-        print("chisquare is " + str(out.chisqr))
-        self.last_chisqr = out.chisqr
-        return out.params
-
-    def plotFit(self, params):  
-        p = params.valuesdict()
-        nexp = int(p["nexp"])
-
-        As = []
-        Taus = []
-        for component in range(1,nexp+1):
-            As.append(p["A"+ str(component)])
-            Taus.append(p["t"+ str(component)])
-        t0 = p["t0"]
-        y_model = self.multipleGaussExp(self.t, t0, As, Taus)       
-        
-        plt.figure(figsize=(8, 6), dpi=100)
-        plt.plot(self.t, self.a, 'bo')
-        plt.plot(self.t, y_model, 'r-')
-        #plt.xlim(-1,10)
-        plt.xlabel("Delay (ps)")
-        plt.ylabel("\u0394A")
-        plt.xticks(fontsize=12)
-        plt.yticks(fontsize=12)
-        #plt.title(self.label, fontdict=18, loc="left")
-        plt.show()    
 
     def fuseTwoKinetics(self, kinetic1_id, kinetic2_id, delay_between):
         #merge two kinetics into one (not do average, but connect at some point
