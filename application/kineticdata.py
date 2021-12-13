@@ -349,6 +349,7 @@ class Experiment:
     def addKineticData(self, kineticdata):
         kineticdata.num = len(self.all_data)
         self.all_data.append(kineticdata)
+        self._renumber()
         #self.count += 1
         
     def genParameters(self):
@@ -406,6 +407,7 @@ class Experiment:
         self.all_data.remove(k1)
         self.all_data.remove(k2)
         self.all_data.append(tmp_kinetic)
+        self._renumber()
         
     def splitKineticIntoTwo(self, kinetic_id, split_point): 
         #to be implemented, idea is to take one kinetic, split into two parts
@@ -416,17 +418,30 @@ class Experiment:
         #remove selected kinetic from experiment
         kinetic = self[kinetic_id]
         self.all_data.remove(kinetic)
+        self._renumber()
     
     def __getitem__(self, i):
+        #note that when taking single item it will return reference
+        #but when taking a few it will return new separate experiment with copies
         if(type(i) is str):
             for x in self.all_data:
                 if(x.name == i):
                     return x
             raise IndexError("kinetic with name: " + i + " not found in experiment")
+        elif(type(i) is list):
+            tmp = Experiment()
+            for x in i:
+                tmp.all_data.append(copy.deepcopy(self[x]))
+            tmp._renumber()
+            return tmp
         else:
             return self.all_data[i]
         #add also posibity to call them by name
         #(if int then by number, if string then by name)
+        
+    def _renumber(self): #recount numbers in kinetics
+        for i in range(len(self.all_data)):
+            self.all_data[i].num = i
     
     #def __setitem__
     #def __getslice__
