@@ -149,7 +149,7 @@ class KineticData:
         if(a_guesses == None):
             a_guesses = np.array(guesses)*0.0
         if(fix == None):
-            fix = [False]*len(guesses) 
+            fix = [False]*len(guesses)
 
         if(t_min is None):
             index_min = 0
@@ -171,7 +171,31 @@ class KineticData:
         p.add("index_max", index_max, vary = False)
         p.add("index_min", index_min, vary = False)
 
-        p_out = self.optimize(p)
+        p_out = self.optimize(p, self.residual)
+        self.plotFit(p_out)
+        return p_out
+    
+    def fitSecondOrder(self, k_guess = 1, a_guess = 1, t0 = 0.0, k_fix = False, t_min = None, t_max = None):
+        #the same as above, but for second order reaction - dimerization (simplest case)
+        if(t_min is None):
+            index_min = 0
+        else:
+            index_min = np.argmin(np.abs(t_min-self.data_t))
+            
+        if(t_max is None):
+            index_max = len(self.data_t)-1
+        else:
+            index_max = np.argmin(np.abs(t_max-self.data_t))
+
+        p = lmfit.Parameters()
+        p.add("k", k_guess, vary = not(k_fix))
+        p.add("A", a_guess, vary = True)
+        p.add("t0", t0, vary = False)
+        
+        p.add("index_max", index_max, vary = False)
+        p.add("index_min", index_min, vary = False)
+
+        p_out = self.optimize(p, self.residualSO)
         self.plotFit(p_out)
         return p_out
 
@@ -191,6 +215,19 @@ class KineticData:
 
         return np.subtract(self.data_a[index_min:index_max+1], y_model)
 
+    def residualSO(self, params):
+        p = params.valuesdict()
+        index_max = int(p["index_max"])
+        index_min = int(p["index_min"])
+
+        k = p["k"]
+        A = p["A"]
+        t0 = p["t0"]
+        
+        y_model = self.secondOrder(self.data_t[index_min:index_max+1], t0, A, k)
+
+        return np.subtract(self.data_a[index_min:index_max+1], y_model)
+
     def multipleGaussExp(self, t, t0, As, taus, offset): 
         #As and taus should be lists/tuples of the same length
         return_value = offset
@@ -201,28 +238,39 @@ class KineticData:
     def gaussExp(self, t, A, tau):
         return A * np.exp(- t / tau)
     
-    def optimize(self, params):
-        mini = lmfit.Minimizer(self.residual, params, nan_policy='propagate')
+    def secondOrder(self, t, t0, A, k):
+        return 1.0/(k*(t-t0)-A)
+    
+    def optimize(self, params, residual_func):
+        mini = lmfit.Minimizer(residual_func, params, nan_policy='propagate')
         out = mini.leastsq()
         #lmfit.report_fit(out.params) #robi dużo zamieszania
         print("chisquare is " + str(out.chisqr))
         self.last_chisqr = out.chisqr
         return out.params
 
-    def plotFit(self, params):  
+    def plotFit(self, params):
         p = params.valuesdict()
-        nexp = int(p["nexp"])
         index_max = int(p["index_max"])
-        index_min = int(p["index_min"])
-
-        As = []
-        Taus = []
-        for component in range(1,nexp+1):
-            As.append(p["A"+ str(component)])
-            Taus.append(p["t"+ str(component)])
-        t0 = p["t0"]
-        y_model = self.multipleGaussExp(self.data_t[index_min:index_max+1], t0, As, Taus, 0.0)       
+        index_min = int(p["index_min"]) 
         
+        if("nexp" in p): #this is multiexp fit
+            nexp = int(p["nexp"])
+
+            As = []
+            Taus = []
+            for component in range(1,nexp+1):
+                As.append(p["A"+ str(component)])
+                Taus.append(p["t"+ str(component)])
+            t0 = p["t0"]
+            y_model = self.multipleGaussExp(self.data_t[index_min:index_max+1], t0, As, Taus, 0.0)  
+            
+        elif("k" in p): #this is dimerization second order fit (simple one)
+            k = p["k"]
+            A = p["A"]
+            t0 = p["t0"]       
+            y_model = self.secondOrder(self.data_t[index_min:index_max+1], t0, A, k)
+             
         plt.figure(dpi=100)
         plt.plot(self.data_t, self.data_a, 'bo')
         plt.plot(self.data_t[index_min:index_max+1], y_model, 'r-')
@@ -231,19 +279,23 @@ class KineticData:
         plt.grid(True, which="major", linestyle='--')
         #plt.xticks(fontsize=12)
         #plt.yticks(fontsize=12)
-        plt.title("Exponential fit for kinetic " + self.name)
+        plt.title("Fit of kinetic " + self.name)
         
-        sum_preexps = 0.0
-        for i in range(1,nexp+1):
-            sum_preexps += p["A"+ str(i)]
-        
-        print(params)
-        desc = ""
-        for i in range(1,nexp+1):
-            contribution = 100*p["A"+str(i)]/sum_preexps
-            desc += "tau_" + str(i) + " = {a:.2e} ({b:.1f}%)\n".format(a=p["t"+str(i)], b=contribution)
-        plt.figtext(0.5, 0.7, desc, fontdict={'size': 12})
+        if("nexp" in p): #this is multiexp fit
+            sum_preexps = 0.0
+            for i in range(1,nexp+1):
+                sum_preexps += p["A"+ str(i)]
+            desc = ""
+            for i in range(1,nexp+1):
+                contribution = 100*p["A"+str(i)]/sum_preexps
+                desc += "tau_" + str(i) + " = {a:.2e} ({b:.1f}%)\n".format(a=p["t"+str(i)], b=contribution)
+            plt.figtext(0.5, 0.7, desc, fontdict={'size': 12})
+        elif("k" in p): #this is dimerization second order fit (simple one)            
+            desc = "k = {a:.2e} 1/M\n A = {b:.2e} 1/M/s".format(a=k, b=A)
+            plt.figtext(0.5, 0.7, desc, fontdict={'size': 12})
+            
         plt.show()
+        print(params)
 
     def getInitialSlope(self, points_no = 10, time_window = None, plot = False):
         #used to calc initial slope of growing, starts at t_on
