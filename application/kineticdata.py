@@ -14,6 +14,7 @@ import matplotlib.pyplot as plt
 import copy
 from modfit import MParameter, MParameters
 import lmfit
+from scipy.signal import savgol_filter
 
 
 class LightEvent: 
@@ -91,7 +92,11 @@ class KineticData:
         else:
             self.name = name
         self.zeroed = zeroed #if true, means that before t_on absorbance was set to zero
-          
+        
+        #to be sure that after loading we always finish with np.array lists
+        #self.data_t = np.array(self.data_t)
+        #self.data_a = np.array(self.data_a)
+        
     def selectTimes(self, t_min, t_max): #TODO: checl consistency, written fast
         index_min = np.argmin(np.abs(self.data_t-t_min))
         index_max = np.argmin(np.abs(self.data_t-t_max))
@@ -188,8 +193,8 @@ class KineticData:
             index_max = np.argmin(np.abs(t_max-self.data_t))
 
         p = lmfit.Parameters()
-        p.add("k", k_guess, vary = not(k_fix))
-        p.add("A", a_guess, vary = True)
+        p.add("k", k_guess, vary = not(k_fix), min = 0)
+        p.add("A", a_guess, vary = True, min = 0)
         p.add("t0", t0, vary = False)
         p.add("offset", offset, vary = True)
         
@@ -240,8 +245,8 @@ class KineticData:
     def gaussExp(self, t, A, tau):
         return A * np.exp(- t / tau)
     
-    def secondOrder(self, t, t0, A, k, offset):
-        return 1.0/(k*(t-t0)+A) + offset
+    def secondOrder(self, t, t0, A0, k, offset):
+        return A0/(A0*k*(t-t0)+1) + offset
     
     def optimize(self, params, residual_func):
         mini = lmfit.Minimizer(residual_func, params, nan_policy='propagate')
@@ -294,11 +299,81 @@ class KineticData:
                 desc += "tau_" + str(i) + " = {a:.2e} ({b:.1f}%)\n".format(a=p["t"+str(i)], b=contribution)
             plt.figtext(0.5, 0.7, desc, fontdict={'size': 12})
         elif("k" in p): #this is dimerization second order fit (simple one)            
-            desc = "k = {a:.2e} 1/M\nA = {b:.2e} 1/M/s".format(a=k, b=A)
+            desc = "k = {a:.2e} 1/M/s\nA\u2080 = {b:.2e} M".format(a=k, b=A)
             plt.figtext(0.5, 0.7, desc, fontdict={'size': 12})
             
         plt.show()
         print(params)
+
+    def plotRateVsA(self, power = 1, x_min = None, x_max = None):
+        #plot d signal/dt vs signal to test order of reaction
+        tmp_a = self.data_a - self.data_a[-1] #zero at end
+        rate = -np.gradient(tmp_a, self.data_t)
+        plt.figure(dpi=100)
+        plt.plot(np.power(tmp_a,power), rate, 'bo')
+        plt.xlabel("Signal")
+        plt.ylabel("Rate")
+        plt.xlim(x_min, x_max)
+        plt.grid(True, which="major", linestyle='--')
+        #plt.xticks(fontsize=12)
+        #plt.yticks(fontsize=12)
+        plt.title("Kinetic " + self.name)
+        plt.show()
+
+    def plotRateVsLog(self, x_min = None, x_max = None, smooth = None):
+        #plot d signal/dt vs signal to test order of reaction
+        
+        if(x_min is not None):
+            index_min = np.argmin(np.abs(self.data_t-x_min))
+        else:
+            index_min = 0
+ 
+        if(x_max is not None):
+            index_max = np.argmin(np.abs(self.data_t-x_max))
+        else:
+            index_max = len(self.data_t)-1
+       
+        tmp_a = self.data_a[index_min:index_max-1]
+        tmp_t = self.data_t[index_min:index_max-1]
+        
+        if(smooth is not None):
+            tmp_a_sm = savgol_filter(tmp_a, 3*7, 3)
+            plt.figure(dpi=100)
+            plt.plot(tmp_t, tmp_a, 'b-') 
+            plt.plot(tmp_t, tmp_a_sm, 'r-') 
+            plt.show()
+            tmp_a = tmp_a_sm
+        
+        rate = -np.gradient(tmp_a, tmp_t)
+        x = np.log(tmp_a)
+        y = np.log(rate)
+        
+        new_x = []
+        new_y = []
+        for i in range(x.shape[0]): #dirty but works. cleans nans
+            if(np.isfinite(x[i]) and np.isfinite(y[i])):
+                new_x.append(x[i])
+                new_y.append(y[i])
+        x = np.array(new_x)
+        y = np.array(new_y)
+
+        mod = lmfit.models.LinearModel()
+        pars = mod.guess(y, x=x)
+        out = mod.fit(y, pars, x=x)        
+        slope = out.params["slope"].value
+        
+        plt.figure(dpi=100)
+        plt.plot(x, y, 'bo')
+        plt.plot(x, out.best_fit, 'r-')    
+        plt.xlabel("Log signal")
+        plt.ylabel("Log rate")
+        #plt.xlim(x_min, x_max)
+        plt.grid(True, which="major", linestyle='--')
+        plt.figtext(0.6, 0.15, "slope = " + "{:.2e}".format(slope), fontdict={'size': 12})
+        #plt.xticks(fontsize=12)
+        #plt.yticks(fontsize=12)
+        plt.title("Kinetic " + self.name)
+        plt.show()
 
     def getInitialSlope(self, points_no = 10, time_window = None, plot = False):
         #used to calc initial slope of growing, starts at t_on
@@ -387,8 +462,69 @@ class KineticData:
             lmfit.report_fit(out.params)
             cfactor = (offset - self.data_a[0])/(len(self.data_a)-1)
             newdata = [(self.data_a[i] - cfactor*i) for i in range(len(self.data_a))]
-            self.data_a = newdata            
-            
+            self.data_a = newdata                 
+
+    def __getitem__(self, t): #return value at time in a portable
+        return self.data_a[np.argmin(np.abs(self.data_t - t))]
+        
+    def zeroAt(self, t):
+        self.data_a -= self[t]   
+        
+    def maximum(self):
+        return self.data_t[np.argmax(self.data_a)]
+
+    def minimum(self):
+        return self.data_t[np.argmin(self.data_a)]
+
+    def normAt(self, t):
+        index = np.argmin(np.abs(self.data_t - t))
+        if(self.data_a[index] < 0):
+            self.data_a = - self.data_a / self.data_a[index]
+        elif(self.data_a[index] > 0):
+            self.data_a = self.data_a / self.a[index]
+        
+    def __sub__(self, offset):
+        tmp = copy.deepcopy(self)
+        tmp.data_a -= offset
+        return tmp 
+    
+    def __isub__(self, offset):
+        self.data_a -= offset    
+    
+    def __add__(self, offset): 
+        tmp = copy.deepcopy(self)
+        tmp.data_a += offset
+        return tmp
+
+    def __iadd__(self, offset):
+        self.data_a += offset         
+
+    def __mul__(self, value): 
+        tmp = copy.deepcopy(self)
+        tmp.data_a *= value
+        return tmp      
+
+    def __imul__(self, value): 
+        self.data_a *= value  
+
+    def __neg__(self):
+        tmp = copy.deepcopy(self)
+        tmp.data_a = -tmp.data_a
+        return tmp
+    
+    def __pos__(self):
+        tmp = copy.deepcopy(self)
+        tmp.data_a = +tmp.data_a
+        return tmp    
+
+    def __truediv__(self, o):
+        tmp = copy.deepcopy(self)
+        tmp.a = tmp.data_a / o #assumes o is number
+        return tmp        
+    
+    def __idiv__(self, o):
+        self.a /= o #assumes o is number
+    
             
 class Experiment: 
     #container for kineticdata or other future data types prepared to fit globally
@@ -418,7 +554,7 @@ class Experiment:
             self.all_data[i].updateParameters(params)
  
     def plotYourself(self, num = None, dpi=150, 
-                     x_min = None, x_max = None, y_min = None, y_max = None,):
+                     x_min = None, x_max = None, y_min = None, y_max = None):
         plt.figure(dpi=dpi)
         if(num is None):
             for i in range(len(self.all_data)):
@@ -456,8 +592,8 @@ class Experiment:
         tmp_values = [np.average(np.concatenate([k1.data_a[k1_indexes[i]],k2.data_a[k2_indexes[i]]]))
                                                     for i in range(tmp_times.shape[0])]
         
-        tmp_kinetic.data_t = tmp_times
-        tmp_kinetic.data_a = tmp_values
+        tmp_kinetic.data_t = np.array(tmp_times)
+        tmp_kinetic.data_a = np.array(tmp_values)
 
         self.all_data.remove(k1)
         self.all_data.remove(k2)
@@ -497,6 +633,23 @@ class Experiment:
     def _renumber(self): #recount numbers in kinetics
         for i in range(len(self.all_data)):
             self.all_data[i].num = i
+
+    def __iter__(self):
+        self.nx = 0
+        return self
+        
+    def __next__(self):    
+        if self.nx < len(self.all_data):
+            self.nx += 1
+            return self.all_data[self.nx-1]
+        else:
+            raise StopIteration
+            
+#przemyśleć
+#    def __add__(self, offset): #to add two experiment objects (merge them)
+#        tmp = copy.deepcopy(self)
+#        tmp.data_a += offset
+#        return tmp          
     
     #def __setitem__
     #def __getslice__
