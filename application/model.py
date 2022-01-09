@@ -281,6 +281,53 @@ class ModThermalEyring(ModProcess):
         painter.drawLine(p2, p2 + p_arr1)
         painter.drawLine(p2, p2 + p_arr2)        
         
+class ModDimerization(ModProcess):
+    def __init__(self, new_name, pop_source, pop_target):
+        super().__init__(new_name, pop_source, pop_target)
+        self.k = 0
+        self.type = "kd" #note that meaning and unit of this k is different than for thermal relaxation
+        
+    def paintYourself(self, painter):
+        p1, p2 = self.getsetLocation()
+        
+        #firstly draw sinusiodal shape indicating nonradiative process
+        fragm_len = 3.0
+        modamp = 2.5 #depth of modulation
+        diff = p2 - p1
+        full_length = math.sqrt(diff.x()*diff.x() + diff.y()*diff.y())
+        iters = math.floor(full_length / fragm_len)
+        unit_vect = diff * fragm_len / full_length #piece of line used to render whole curve
+        if(diff.x() >= 0):
+            angle = math.asin(diff.y() / math.sqrt(diff.x()*diff.x() + diff.y()*diff.y()))
+        else:
+            angle = math.pi - math.asin(diff.y() / math.sqrt(diff.x()*diff.x() + diff.y()*diff.y()))
+        perp_vect = QtCore.QPointF(modamp*math.cos(angle+math.pi/2), 
+                                   modamp*math.sin(angle+math.pi/2))
+        
+        path = QtGui.QPainterPath(p1)
+        
+        for i in range(1,iters+1):
+            path.lineTo(p1 + unit_vect * i + perp_vect * math.sin(i * math.pi / iters) * math.sin(i * 1))
+        
+        path.lineTo(p2)
+        painter.drawPath(path)
+            
+        diff = p1 - p2 #potrzebne do zrobienia grota strzalki  
+        if(diff.x() >= 0):
+            angle = math.asin(diff.y() / math.sqrt(diff.x()*diff.x() + diff.y()*diff.y()))
+        else:
+            angle = math.pi - math.asin(diff.y() / math.sqrt(diff.x()*diff.x() + diff.y()*diff.y()))
+        
+        angle_diff = math.pi / 10.0 #determines shape of the arrow
+        length = 10.0 #determines shape of the arrow
+        p_arr1 = QtCore.QPointF(length*math.cos(angle+angle_diff), 
+                                length*math.sin(angle+angle_diff))
+        p_arr2 = QtCore.QPointF(length*math.cos(angle-angle_diff), 
+                                length*math.sin(angle-angle_diff))
+        
+        painter.drawLine(p2, p2 + p_arr1)
+        painter.drawLine(p2, p2 + p_arr2)        
+        
 class ModRadiative(ModProcess):
     def __init__(self, new_name, pop_source, pop_target):
         super().__init__(new_name, pop_source, pop_target)    
@@ -741,6 +788,10 @@ class Model:
             elif(elem.type == "k"):
                 params.add(MParameter(elem.name + "__k", value=elem.k, 
                                       vary=False, min=0))   
+            elif(elem.type == "kd"):
+                params.add(MParameter(elem.name + "__k", value=elem.k, 
+                                      vary=False, min=0))                   
+                
             elif(elem.type == "ke"): #temperature-dependent rate constant!
                 params.add(MParameter(elem.name + "__deltaH", value=elem.deltaH, 
                                       vary=False)) 
@@ -807,6 +858,8 @@ class Model:
             if(elem.type == "fi"):
                 elem.fi = p[elem.name + "__fi"]    
             elif(elem.type == "k"):
+                elem.k = p[elem.name + "__k"]     
+            elif(elem.type == "kd"): #second order, dimerization
                 elem.k = p[elem.name + "__k"]     
             elif(elem.type == "ke"): #temperature-dependent rate constant!
                 #negative energy barrier makes no sense!
@@ -898,8 +951,12 @@ class Model:
                     cont = cs[self.populations.index(arr.source)]
                 if(arr.type == "k"):
                     cont *= arr.k
+                elif(arr.type == "kd"):
+                    #second order, so multiply by c second time
+                    cont *= np.abs(cont)
+                    cont *= arr.k
                 elif(arr.type == "ke"):
-                    #remember to caculate it before otherwise result will be incorrect
+                    #remember to recaculate arr.k before otherwise result will be incorrect!
                     cont *= arr.k 
                 elif(arr.type == "fi"):
                     cont *= arr.fi * Ftmp * intensity * arr.source.epsilon[irradiation] * length 
