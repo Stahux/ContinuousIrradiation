@@ -380,6 +380,7 @@ class ModelWindow(QWidget):
         self.select_process = QtWidgets.QComboBox(self)
         self.select_process.addItem("Thermal")
         self.select_process.addItem("Light activated")
+        self.select_process.addItem("Dimerization")
         self.button5 = QtWidgets.QPushButton("Add process", self)
         self.button5.clicked.connect(self.button5Func)
         self.label1.show()
@@ -475,7 +476,7 @@ class ModelWindow(QWidget):
     
     def button4Func(self): #finished edition of process
         if(self.isStrNumber(self.text_proc.text())):
-            if(self.proc_edit.type == "k"):
+            if(self.proc_edit.type == "k" or self.proc_edit.type == "kd"):
                 self.proc_edit.k = float(self.text_proc.text())
             elif(self.proc_edit.type == "fi"):
                 self.proc_edit.fi = float(self.text_proc.text())    
@@ -633,8 +634,10 @@ class ModelWindow(QWidget):
                     if(self.select_process.currentIndex() == 0): # Thermal
                         tmp_arrow = ModThermal(self.text5.text(), self.process_adding, found)
                     elif(self.select_process.currentIndex() == 1): # Light activated
-                        #asumes, that there are only 2 kinds of arrows, which can be added!
                         tmp_arrow = ModRadiative(self.text5.text(), self.process_adding, found) 
+                    elif(self.select_process.currentIndex() == 2): # dimerization
+                        tmp_arrow = ModDimerization(self.text5.text(), self.process_adding, found)
+                    #asumes, that there are only 3 kinds of arrows, which can be added!
                     self.model.addProcess(tmp_arrow)
                     self.text5.setText("")     
                     self.process_adding = False
@@ -657,7 +660,7 @@ class ModelWindow(QWidget):
                     if(p.contains(event.pos())):
                         self.proc_edit = p
                         self.label2.setText("Edit " + p.type + " for " + p.name + " :")
-                        if(p.type == "k"):
+                        if(p.type == "k" or p.type == "kd"):
                             self.text_proc.setText(str(p.k))
                         elif(p.type == "fi"):
                             self.text_proc.setText(str(p.fi))  
@@ -756,7 +759,7 @@ class Model:
         for elem in self.populations: 
             is_sourcethermstate = False
             for arr in elem.arrows:
-                if(arr.source is elem and ( arr.type == "k" or arr.type == "ke")):
+                if(arr.source is elem and (arr.type == "k" or arr.type == "ke" or arr.type == "kd")):
                     is_sourcethermstate = True
             if(is_sourcethermstate == True):
                 elem.initial = 0.0
@@ -953,7 +956,7 @@ class Model:
                     cont *= arr.k
                 elif(arr.type == "kd"):
                     #second order, so multiply by c second time
-                    cont *= np.abs(cont)
+                    cont = cont*np.abs(cont)
                     cont *= arr.k
                 elif(arr.type == "ke"):
                     #remember to recaculate arr.k before otherwise result will be incorrect!
@@ -979,7 +982,7 @@ class Model:
         initial_conditions = list()
         #there was major mistake, i corrected, but better check again, 
         #because error was really stupid and its late now...
-        if(self.psplit == False): 
+        if(self.psplit == False):
             weighted_epsilons = [(elem.epsilon[data.irradiation] * elem.initial) \
                                  for elem in self.populations]
             cfactor = data.absorbance/(data.irradiation_length * sum(weighted_epsilons))
@@ -995,7 +998,7 @@ class Model:
             #ground state, if cannot find (or more than 1), raise error
             for elem in self.populations: 
                 initial_conditions.append(elem.initial[data.num] * cfactor)  
-            
+
         splitpoint1 = -1
         for i in range(len(data.data_t)-1): #split data between on and off light regime
             if(data.data_t[i] <= data.t_on and data.t_on < data.data_t[i+1]):

@@ -611,6 +611,12 @@ class Experiment:
         self.all_data.remove(kinetic)
         self._renumber()
     
+    def getNamesList(self):
+        namelist = []
+        for i in range(len(self.all_data)):
+            namelist.append(self.all_data[i].name)
+        return namelist
+    
     def __getitem__(self, i):
         #note that when taking single item it will return reference
         #but when taking a few it will return new separate experiment with copies
