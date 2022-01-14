@@ -481,7 +481,7 @@ class KineticData:
         if(self.data_a[index] < 0):
             self.data_a = - self.data_a / self.data_a[index]
         elif(self.data_a[index] > 0):
-            self.data_a = self.data_a / self.a[index]
+            self.data_a = self.data_a / self.data_a[index]
         
     def __sub__(self, offset):
         tmp = copy.deepcopy(self)
@@ -554,21 +554,29 @@ class Experiment:
             self.all_data[i].updateParameters(params)
  
     def plotYourself(self, num = None, dpi=150, 
-                     x_min = None, x_max = None, y_min = None, y_max = None):
-        plt.figure(dpi=dpi)
+                     x_min = None, x_max = None, y_min = None, y_max = None,
+                     zero_at = None, xlabel = "Time", ylabel = "Signal"):
+        tmp_data = copy.deepcopy(self.all_data)
+        
+        if(zero_at is not None):
+            for i in range(len(tmp_data)):
+                tmp_data[i].zeroAt(zero_at)
+        
+        plt.figure(figsize=(8, 6), dpi=100)
         if(num is None):
-            for i in range(len(self.all_data)):
-                plt.plot(self.all_data[i].data_t, self.all_data[i].data_a, "-", label=self.all_data[i].name)
+            for i in range(len(tmp_data)):
+                plt.plot(tmp_data[i].data_t, tmp_data[i].data_a, "-", label=tmp_data[i].name)
         else:
-            plt.plot(self.all_data[num].data_t, self.all_data[num].data_a, "-", label=self.all_data[num].name)
+            plt.plot(tmp_data[num].data_t, tmp_data[num].data_a, "-", label=tmp_data[num].name)
                 
-        plt.legend(shadow=True, fontsize="small", labelspacing=0.1)
-        plt.xlabel("Time")
-        plt.ylabel("Signal")
+        plt.legend(shadow=False, frameon=True, prop={'size': 16}, labelspacing=0.1)
+        plt.xlabel(xlabel, fontdict={'size': 16})
+        plt.ylabel(ylabel, fontdict={'size': 16})
         plt.grid(True, which="major", linestyle='--')
         #plt.grid(True, which="minor", linestyle='--')
         plt.xlim(x_min, x_max)
         plt.ylim(y_min, y_max)
+        plt.tick_params(which='both', direction="in", bottom=True, top=True, left=True, right=True, labelsize=14)
         plt.show()
 
     def linearBaselineCorrect(self, exp_no):
@@ -604,6 +612,105 @@ class Experiment:
         #to be implemented, idea is to take one kinetic, split into two parts
         #delete oryginal kinetic and replace it with two parts
         pass
+
+    #simple exp fitting funcs, but for whole Experiment
+    def fitExpParams(self, nexp):
+        p = lmfit.Parameters()
+        p.add("nexp", nexp, vary=False)
+        for component in range(1,nexp+1):
+            for kinetic_no in range(len(self.all_data)):
+                p.add("t"+ str(component)+"_"+str(kinetic_no), 10, vary=True, min=0)
+                if(kinetic_no > 0): #share by default
+                    p["t"+ str(component)+"_"+str(kinetic_no)].set(expr="t"+ str(component)+"_0")
+                p.add("A"+ str(component)+"_"+str(kinetic_no), 0.01, vary = True)
+        
+        for kinetic_no in range(len(self.all_data)):
+            p.add("t0_"+str(kinetic_no), 0, vary = False)
+            p.add("index_max_"+str(kinetic_no), len(self.all_data[kinetic_no].data_t)-1, vary = False)
+            p.add("index_min_"+str(kinetic_no), 0, vary = False)
+        return p
+
+    def gaussExp(self, t, A, tau):
+        return A * np.exp(- t / tau)
+    
+    def multipleGaussExp(self, t, t0, As, taus, offset): 
+        #As and taus should be lists/tuples of the same length
+        return_value = offset
+        for i in range(len(taus)):
+            return_value += self.gaussExp(t-t0, As[i], taus[i])
+        return return_value 
+
+    def residual(self, params):
+        p = params.valuesdict()
+        nexp = int(p["nexp"])
+        
+        residuals = [0]*len(self.all_data)
+        res_counter = 0
+        
+        for kinetic_no in range(len(self.all_data)):
+            index_max = int(p["index_max_"+str(kinetic_no)])
+            index_min = int(p["index_min_"+str(kinetic_no)])
+    
+            As = []
+            Taus = []
+            for component in range(1,nexp+1):
+                As.append(p["A"+ str(component)+"_"+str(kinetic_no)])
+                Taus.append(p["t"+ str(component)+"_"+str(kinetic_no)])
+            t0 = p["t0_"+str(kinetic_no)]
+
+            y_model = self.multipleGaussExp(self.all_data[kinetic_no].data_t[index_min:index_max+1], t0, As, Taus, 0.0)
+            residuals[res_counter]=np.subtract(self.all_data[kinetic_no].data_a[index_min:index_max+1], y_model)
+            res_counter += 1
+
+        res = np.hstack(residuals)
+        #print(res.shape)
+        return res
+     
+    def fitExpOptimize(self, params):
+        mini = lmfit.Minimizer(self.residual, params, nan_policy='propagate')
+        out = mini.leastsq()
+        lmfit.report_fit(out) #robi dużo zamieszania
+        print("chisquare is " + str(out.chisqr))
+        self.last_chisqr = out.chisqr
+        return out.params
+
+    def fitExpOptimizePlot(self, params):
+        p = params.valuesdict()
+        nexp = int(p["nexp"])
+        
+        for kinetic_no in range(len(self.all_data)): 
+            index_max = int(p["index_max_"+str(kinetic_no)])
+            index_min = int(p["index_min_"+str(kinetic_no)]) 
+            
+            As = []
+            Taus = []
+            for component in range(1,nexp+1):
+                As.append(p["A"+ str(component)+"_"+str(kinetic_no)])
+                Taus.append(p["t"+ str(component)+"_"+str(kinetic_no)])
+            t0 = p["t0_"+str(kinetic_no)]
+            y_model = self.multipleGaussExp(self.all_data[kinetic_no].data_t[index_min:index_max+1], t0, As, Taus, 0.0)  
+    
+            plt.figure(dpi=100)
+            plt.plot(self.all_data[kinetic_no].data_t, self.all_data[kinetic_no].data_a, 'bo')
+            plt.plot(self.all_data[kinetic_no].data_t[index_min:index_max+1], y_model, 'r-')
+            plt.xlabel("Time")
+            plt.ylabel("Signal")
+            plt.grid(True, which="major", linestyle='--')
+            #plt.xticks(fontsize=12)
+            #plt.yticks(fontsize=12)
+            plt.title("Fit of kinetic " + self.all_data[kinetic_no].name)
+            
+            sum_preexps = 0.0
+            for component in range(1,nexp+1):
+                sum_preexps += p["A"+ str(component)+"_"+str(kinetic_no)]
+            desc = ""
+            for component in range(1,nexp+1):
+                contribution = 100*p["A"+ str(component)+"_"+str(kinetic_no)]/sum_preexps
+                desc += "tau_" + str(component) + " = {a:.2e} ({b:.1f}%)\n".format(a=p["t"+ str(component)+"_"+str(kinetic_no)], b=contribution)
+            plt.figtext(0.5, 0.7, desc, fontdict={'size': 12})
+            
+        plt.show()
+
     
     def remove(self, kinetic_id):
         #remove selected kinetic from experiment
