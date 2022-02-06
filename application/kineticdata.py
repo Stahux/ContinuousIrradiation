@@ -15,6 +15,7 @@ import copy
 from modfit import MParameter, MParameters
 import lmfit
 from scipy.signal import savgol_filter
+import pickle
 
 
 class LightEvent: 
@@ -565,6 +566,16 @@ class Experiment:
         self.all_data.append(kineticdata)
         self._renumber()
         #self.count += 1
+
+    def save(self, filename):
+        with open(filename, "wb") as f:
+            pickle.dump(self, f, pickle.HIGHEST_PROTOCOL)
+        
+    @staticmethod
+    def load(filename):
+        with open(filename, "rb") as f:
+            loaded = pickle.load(f)
+        return loaded
         
     def genParameters(self):
         generated_params = MParameters()

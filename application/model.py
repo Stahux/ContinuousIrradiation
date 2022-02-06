@@ -988,8 +988,8 @@ class Model:
             cfactor = data.absorbance/(data.irradiation_length * sum(weighted_epsilons))
             #create initial conditions, initialize all population in the 
             #ground state, if cannot find (or more than 1), raise error
-            for elem in self.populations: 
-                initial_conditions.append(elem.initial * cfactor)  
+            for elem in self.populations:
+                initial_conditions.append(elem.initial * cfactor)
         else:
             weighted_epsilons = [(elem.epsilon[data.irradiation] * elem.initial[data.num]) \
                                  for elem in self.populations]
