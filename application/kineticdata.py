@@ -27,6 +27,8 @@ class LightEvent:
 
 
 class KineticData:
+    #irr and probe lengths in cm.
+    #absorbance is defined at irradiation wavelength and length
     def __init__(self, filename, probe, irradiation, intensity = 0.0, 
                  absorbance = 0.0, t_on = None, t_off = None, probe_length = 1, 
                  irradiation_length = 1, num = None, zeroed = False, src = None, 
@@ -96,6 +98,9 @@ class KineticData:
         #to be sure that after loading we always finish with np.array lists
         #self.data_t = np.array(self.data_t)
         #self.data_a = np.array(self.data_a)
+        
+    def save(self, filename):
+        np.savetxt(filename + ".txt", np.transpose(np.vstack([self.data_t,self.data_a])), delimiter=',')
         
     def selectTimes(self, t_min, t_max): #TODO: checl consistency, written fast
         index_min = np.argmin(np.abs(self.data_t-t_min))
@@ -407,6 +412,24 @@ class KineticData:
         
         return slope      
 
+    def plotAroundPoint(self, time, width = 50):
+        #show data around some point to check if this is true t_on or t_off (alignment)
+        start_index = np.argmin(np.abs(time-width-self.data_t))
+        end_index = np.argmin(np.abs(time+width-self.data_t))
+        
+        x = self.data_t[start_index:end_index+1]
+        y = self.data_a[start_index:end_index+1]
+
+        plt.figure(dpi=100)
+        plt.plot(x, y, 'ro--')
+        plt.xlim(time-width/2,time+width/2)
+        plt.xlabel("Time")
+        plt.ylabel("Signal")
+        plt.axvline(time, 0, 1, linewidth=1, color='k', linestyle="--")
+        plt.grid(True, which="major", linestyle='--')
+        plt.title("Initial slope for kinetic " + self.name)
+        plt.show()
+
     def residualLBC(self, params):
         p = params.valuesdict()
         nexp = int(p["nexp"])
@@ -555,19 +578,28 @@ class Experiment:
  
     def plotYourself(self, num = None, dpi=150, 
                      x_min = None, x_max = None, y_min = None, y_max = None,
-                     zero_at = None, xlabel = "Time", ylabel = "Signal"):
+                     zero_at = None, xlabel = "Time", ylabel = "Signal", 
+                     labeling = None, intensity_scale = None):
         tmp_data = copy.deepcopy(self.all_data)
         
         if(zero_at is not None):
             for i in range(len(tmp_data)):
                 tmp_data[i].zeroAt(zero_at)
         
+        labels = []
+        if(labeling is None):
+            labels = [tmp_data[i].name for i in range(len(tmp_data))]
+        elif(labeling == "intensity"):
+            labels = ["{:.0f} \u00B5mol L\u207B\u00B9 s\u207B\u00B9".format(tmp_data[i].intensity*10**6) for i in range(len(tmp_data))]            
+        elif(labeling == "intensity_flux"):
+            labels = ["{:.0f} \u00B5mol m\u207B\u00B2 s\u207B\u00B9".format(tmp_data[i].intensity*intensity_scale*10**6) for i in range(len(tmp_data))]            
+                      
         plt.figure(figsize=(8, 6), dpi=100)
-        if(num is None):
+        if(num is None): #later remove this option, to plot one kinetics this way
             for i in range(len(tmp_data)):
-                plt.plot(tmp_data[i].data_t, tmp_data[i].data_a, "-", label=tmp_data[i].name)
+                plt.plot(tmp_data[i].data_t, tmp_data[i].data_a, "-", label=labels[i])
         else:
-            plt.plot(tmp_data[num].data_t, tmp_data[num].data_a, "-", label=tmp_data[num].name)
+            plt.plot(tmp_data[num].data_t, tmp_data[num].data_a, "-", label=labels[num])
                 
         plt.legend(shadow=False, frameon=True, prop={'size': 16}, labelspacing=0.1)
         plt.xlabel(xlabel, fontdict={'size': 16})

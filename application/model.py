@@ -1116,6 +1116,13 @@ class Model:
         if(x_max is not None):
             plt.xlim(right=x_max)             
         plt.show()
+
+    def recreateExperimentData(self, experiment):
+        #copies experiment and puts the simulated data inside, creating "simulated dataset
+        tmp = copy.deepcopy(experiment)
+        for i in range(len(tmp.all_data)):
+            tmp[i].data_a = self.solveModelSingle(tmp.all_data[i]).data_a
+        return tmp
     
     def plotConcentrations(self, data, population_nums = [], x_min = None, 
                            x_max = None,dpi = 80, title = None):
