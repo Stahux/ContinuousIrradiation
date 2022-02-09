@@ -408,7 +408,8 @@ class KineticData:
             plt.ylabel("Signal")
             plt.grid(True, which="major", linestyle='--')
             plt.figtext(0.6, 0.15, "slope = " + "{:.2e}".format(slope), fontdict={'size': 12})
-            plt.title("Initial slope for kinetic " + self.name)
+            if(type(self.name) is str):
+                plt.title("Initial slope for kinetic " + self.name)
             plt.show()
         
         return slope      
@@ -604,6 +605,8 @@ class Experiment:
             labels = ["{:.0f} \u00B5mol L\u207B\u00B9 s\u207B\u00B9".format(tmp_data[i].intensity*10**6) for i in range(len(tmp_data))]            
         elif(labeling == "intensity_flux"):
             labels = ["{:.0f} \u00B5mol m\u207B\u00B2 s\u207B\u00B9".format(tmp_data[i].intensity*intensity_scale*10**6) for i in range(len(tmp_data))]            
+        elif(labeling == "temperature"):
+            labels = ["{:.0f} \u2103".format(tmp_data[i].temperature-273.15) for i in range(len(tmp_data))]            
                       
         plt.figure(figsize=(8, 6), dpi=100)
         if(num is None): #later remove this option, to plot one kinetics this way

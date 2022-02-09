@@ -240,6 +240,26 @@ class ModThermalEyring(ModProcess):
                  - self.deltaH/(R_gas*temperature))
         return self.k
 
+    def getDeltaHassumingK(self, temperature): 
+        #calc delta H assuming set delta S and k set
+        #(in order to recalculate something)
+        R_gas = 0.00198720425864083 #gas constant [kcal/K/mol]
+        h_planck = 6.62607015E-34 #planck [J*s]
+        kb = 1.380649E-23 #boltzmann constant [J/K]
+        tmp = (self.k*h_planck/self.kappa*kb*temperature) * np.exp(-self.deltaS/R_gas)
+        deltaH = -np.log(tmp)*R_gas*temperature
+        return deltaH
+
+    def getDeltaSassumingK(self, temperature): 
+        #calc delta S assuming set delta H and k set
+        #(in order to recalculate something)
+        R_gas = 0.00198720425864083 #gas constant [kcal/K/mol]
+        h_planck = 6.62607015E-34 #planck [J*s]
+        kb = 1.380649E-23 #boltzmann constant [J/K]
+        tmp = (self.k*h_planck/self.kappa*kb*temperature) * np.exp(self.deltaH/(R_gas*temperature))
+        deltaS = np.log(tmp)*R_gas
+        return deltaS
+
     def paintYourself(self, painter):
         p1, p2 = self.getsetLocation()
         
@@ -712,15 +732,19 @@ class Model:
         
     def turnKsIntoEyrings(self):
         #simple helper func to replace constant k thermal arrows with Ering ones
+        found_ks = []
         for arr in self.processes:
             if(arr.type == "k"):
-                old_name = arr.name
-                source = arr.source
-                target = arr.target
-                arr.remove(self)
+                found_ks.append(arr)
                 
-                tmp_arrow = ModThermalEyring(old_name, source, target)
-                self.addProcess(tmp_arrow) 
+        for arr in found_ks:        
+            old_name = arr.name
+            source = arr.source
+            target = arr.target
+            arr.remove(self)
+            
+            tmp_arrow = ModThermalEyring(old_name, source, target)
+            self.addProcess(tmp_arrow) 
         
     def save(self, filename):
         with open(filename, "wb") as f:
@@ -1146,6 +1170,19 @@ class Model:
         if(x_max is not None):
             plt.xlim(right=x_max)             
         plt.show()
+     
+    def __getitem__(self, i):
+        #returns reference to arrow or population by its name
+        for x in self.processes:
+            if(x.name == i):
+                return x
+        for x in self.populations:
+            if(x.name == i):
+                return x
+        raise IndexError("Process or population with name: " + i + " not found!")
+
+        #add also posibity to call them by name
+        #(if int then by number, if string then by name)        
         
     #what it should do:
     #1. there should be function which extract required paremeter from params, 
