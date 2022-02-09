@@ -241,22 +241,22 @@ class ModThermalEyring(ModProcess):
         return self.k
 
     def getDeltaHassumingK(self, temperature): 
-        #calc delta H assuming set delta S and k set
+        #calc delta H assuming set delta S and k set, ignores set delta H
         #(in order to recalculate something)
         R_gas = 0.00198720425864083 #gas constant [kcal/K/mol]
         h_planck = 6.62607015E-34 #planck [J*s]
         kb = 1.380649E-23 #boltzmann constant [J/K]
-        tmp = (self.k*h_planck/self.kappa*kb*temperature) * np.exp(-self.deltaS/R_gas)
+        tmp = (self.k*h_planck/(self.kappa*kb*temperature)) * np.exp(-self.deltaS/R_gas)
         deltaH = -np.log(tmp)*R_gas*temperature
         return deltaH
 
     def getDeltaSassumingK(self, temperature): 
-        #calc delta S assuming set delta H and k set
+        #calc delta S assuming set delta H and k set, ignores set delta H
         #(in order to recalculate something)
         R_gas = 0.00198720425864083 #gas constant [kcal/K/mol]
         h_planck = 6.62607015E-34 #planck [J*s]
         kb = 1.380649E-23 #boltzmann constant [J/K]
-        tmp = (self.k*h_planck/self.kappa*kb*temperature) * np.exp(self.deltaH/(R_gas*temperature))
+        tmp = (self.k*h_planck/(self.kappa*kb*temperature)) * np.exp(self.deltaH/(R_gas*temperature))
         deltaS = np.log(tmp)*R_gas
         return deltaS
 
@@ -744,7 +744,7 @@ class Model:
             arr.remove(self)
             
             tmp_arrow = ModThermalEyring(old_name, source, target)
-            self.addProcess(tmp_arrow) 
+            self.addProcess(tmp_arrow)
         
     def save(self, filename):
         with open(filename, "wb") as f:
