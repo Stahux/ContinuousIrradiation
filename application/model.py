@@ -1108,9 +1108,22 @@ class Model:
         return return_experiment
     
     def plotYourself(self, experiment, num = None, x_min = None, 
-                     x_max = None,dpi = 120, title = None):
+                     x_max = None, y_min = None, 
+                     y_max = None, dpi = 100, title = None, 
+                     labeling = None, intensity_scale = None):
         colors = ("b","r","g","c","m","y","C0","C1","C2","C3","C4","C5","C6","C7") * 100
-        plt.figure(dpi=dpi)
+        
+        labels = []
+        if(labeling is None):
+            labels = [experiment.all_data[i].name for i in range(len(experiment.all_data))]
+        elif(labeling == "intensity"):
+            labels = ["{:.0f} \u00B5mol L\u207B\u00B9 s\u207B\u00B9".format(experiment.all_data[i].intensity*10**6) for i in range(len(experiment.all_data))]            
+        elif(labeling == "intensity_flux"):
+            labels = ["{:.0f} \u00B5mol m\u207B\u00B2 s\u207B\u00B9".format(experiment.all_data[i].intensity*intensity_scale*10**6) for i in range(len(experiment.all_data))]            
+        elif(labeling == "temperature"):
+            labels = ["{:.0f} \u2103".format(experiment.all_data[i].temperature-273.15) for i in range(len(experiment.all_data))]            
+        
+        plt.figure(figsize=(8, 6), dpi=dpi)
         
         if(num is None):
             tmplist = list()
@@ -1119,10 +1132,8 @@ class Model:
                 plt.plot(experiment.all_data[i].data_t, experiment.all_data[i].data_a, 
                          colors[i]+"-",alpha=0.5)
                 plt.plot(tmplist[i].data_t, tmplist[i].data_a, 
-                         colors[i]+"-", label = "Kinetic " + str(i) + " irr: " + \
-                         str(experiment.all_data[i].irradiation) + " nm, probe: " + \
-                         str(experiment.all_data[i].probe) + " nm.")
-            plt.legend(fontsize="x-small", frameon=False, labelspacing=0.1)
+                         colors[i]+"-", label = labels[i])
+            plt.legend(fontsize="x-small", shadow=False, frameon=True, prop={'size': 16}, labelspacing=0.1)
         else:
             if(num < len(experiment.all_data)): # and num < tmp.count #dokoncz!!!!!!!!!!!!
                 tmp = self.solveModelSingle(experiment.all_data[num])
@@ -1131,14 +1142,20 @@ class Model:
         
         if(title is not None):
             plt.title(title, loc="left", fontsize=16)
-        plt.xlabel("Time (s)",fontsize=16)
-        plt.ylabel("\u0394A or A",fontsize=16)
+        plt.xlabel("Time (s)", fontdict={'size': 16})
+        plt.ylabel("\u0394A or A", fontdict={'size': 16})
         plt.xticks(fontsize=12)
         plt.yticks(fontsize=12)        
+        plt.tick_params(which='both', direction="in", bottom=True, top=True, left=True, right=True, labelsize=14)
         if(x_min is not None):
             plt.xlim(left=x_min) 
         if(x_max is not None):
-            plt.xlim(right=x_max)             
+            plt.xlim(right=x_max) 
+        if(y_min is not None):
+            plt.ylim(bottom=y_min) 
+        if(y_max is not None):
+            plt.ylim(top=y_max) 
+            
         plt.show()
 
     def recreateExperimentData(self, experiment):

@@ -588,7 +588,7 @@ class Experiment:
         for i in range(len(self.all_data)):
             self.all_data[i].updateParameters(params)
  
-    def plotYourself(self, num = None, dpi=150, 
+    def plotYourself(self, num = None, dpi=100, 
                      x_min = None, x_max = None, y_min = None, y_max = None,
                      zero_at = None, xlabel = "Time", ylabel = "Signal", 
                      labeling = None, intensity_scale = None):
@@ -608,7 +608,7 @@ class Experiment:
         elif(labeling == "temperature"):
             labels = ["{:.0f} \u2103".format(tmp_data[i].temperature-273.15) for i in range(len(tmp_data))]            
                       
-        plt.figure(figsize=(8, 6), dpi=100)
+        plt.figure(figsize=(8, 6), dpi=dpi)
         if(num is None): #later remove this option, to plot one kinetics this way
             for i in range(len(tmp_data)):
                 plt.plot(tmp_data[i].data_t, tmp_data[i].data_a, "-", label=labels[i])
