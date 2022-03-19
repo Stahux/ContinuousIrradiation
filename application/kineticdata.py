@@ -111,8 +111,8 @@ class KineticData:
         if(self.t_off > self.data_t[-1]):
             self.t_off = self.data_t[-1]
     
-    def plotYourself(self):
-        plt.figure()
+    def plotYourself(self, dpi=100):
+        plt.figure(figsize=(8, 6), dpi=dpi)
         plt.plot(self.data_t, self.data_a, "bo")
         #plt.plot(self.data_t, residual(out2.params) + self.data_a, "r-")
         plt.show()        
@@ -262,7 +262,7 @@ class KineticData:
         self.last_chisqr = out.chisqr
         return out.params
 
-    def plotFit(self, params):
+    def plotFit(self, params, dpi=100):
         p = params.valuesdict()
         index_max = int(p["index_max"])
         index_min = int(p["index_min"]) 
@@ -285,7 +285,7 @@ class KineticData:
             offset = p["offset"] 
             y_model = self.secondOrder(self.data_t[index_min:index_max+1], t0, A, k, offset)
              
-        plt.figure(dpi=100)
+        plt.figure(figsize=(8, 6), dpi=dpi)
         plt.plot(self.data_t, self.data_a, 'bo')
         plt.plot(self.data_t[index_min:index_max+1], y_model, 'r-')
         plt.xlabel("Time")
@@ -311,11 +311,11 @@ class KineticData:
         plt.show()
         print(params)
 
-    def plotRateVsA(self, power = 1, x_min = None, x_max = None):
+    def plotRateVsA(self, power = 1, x_min = None, x_max = None, dpi=100):
         #plot d signal/dt vs signal to test order of reaction
         tmp_a = self.data_a - self.data_a[-1] #zero at end
         rate = -np.gradient(tmp_a, self.data_t)
-        plt.figure(dpi=100)
+        plt.figure(figsize=(8, 6), dpi=dpi)
         plt.plot(np.power(tmp_a,power), rate, 'bo')
         plt.xlabel("Signal")
         plt.ylabel("Rate")
@@ -326,30 +326,30 @@ class KineticData:
         plt.title("Kinetic " + self.name)
         plt.show()
 
-    def plotRateVsLog(self, x_min = None, x_max = None, smooth = None):
+    def plotRateVsLog(self, x_min = None, x_max = None, smooth = None, dpi=100):
         #plot d signal/dt vs signal to test order of reaction
-        
+
         if(x_min is not None):
             index_min = np.argmin(np.abs(self.data_t-x_min))
         else:
             index_min = 0
- 
+
         if(x_max is not None):
             index_max = np.argmin(np.abs(self.data_t-x_max))
         else:
             index_max = len(self.data_t)-1
-       
+
         tmp_a = self.data_a[index_min:index_max-1]
         tmp_t = self.data_t[index_min:index_max-1]
-        
+
         if(smooth is not None):
-            tmp_a_sm = savgol_filter(tmp_a, 3*7, 3)
-            plt.figure(dpi=100)
-            plt.plot(tmp_t, tmp_a, 'b-') 
-            plt.plot(tmp_t, tmp_a_sm, 'r-') 
-            plt.show()
+            tmp_a_sm = savgol_filter(tmp_a, 3*3, 3)
+            #plt.figure(figsize=(8, 6), dpi=dpi)
+            #plt.plot(tmp_t, tmp_a, 'bo') 
+            #plt.plot(tmp_t, tmp_a_sm, 'ro') 
+            #plt.show()
             tmp_a = tmp_a_sm
-        
+
         rate = -np.gradient(tmp_a, tmp_t)
         x = np.log(tmp_a)
         y = np.log(rate)
@@ -368,20 +368,22 @@ class KineticData:
         out = mod.fit(y, pars, x=x)        
         slope = out.params["slope"].value
         
-        plt.figure(dpi=100)
+        plt.figure(figsize=(8, 6), dpi=dpi)
         plt.plot(x, y, 'bo')
         plt.plot(x, out.best_fit, 'r-')    
-        plt.xlabel("Log signal")
-        plt.ylabel("Log rate")
+        plt.ylabel("Log(dA/dt)", fontdict={'size': 16})
+        plt.xlabel("Log(\u0394A)", fontdict={'size': 16})
         #plt.xlim(x_min, x_max)
         plt.grid(True, which="major", linestyle='--')
-        plt.figtext(0.6, 0.15, "slope = " + "{:.2e}".format(slope), fontdict={'size': 12})
+        plt.figtext(0.6, 0.15, "slope = " + "{:.2f}".format(slope), fontdict={'size': 17})
         #plt.xticks(fontsize=12)
         #plt.yticks(fontsize=12)
-        plt.title("Kinetic " + self.name)
+        plt.grid(True, which="major", linestyle='--')
+        plt.tick_params(which='both', direction="in", bottom=True, top=True, left=True, right=True, labelsize=14)
+        plt.title("Kinetic: " + self.name + ", intensity: " + str(self.intensity) + "\n")
         plt.show()
 
-    def getInitialSlope(self, points_no = 10, time_window = None, plot = False):
+    def getInitialSlope(self, points_no = 10, time_window = None, plot = False, dpi=100):
         #used to calc initial slope of growing, starts at t_on
         start_index = np.argmin(np.abs(self.data_t-self.t_on))+1
         
@@ -397,9 +399,10 @@ class KineticData:
         pars = mod.guess(y, x=x)
         out = mod.fit(y, pars, x=x)        
         slope = out.params["slope"].value
+        slopeerr = out.params["slope"].stderr
         
         if(plot):
-            plt.figure(dpi=100)
+            plt.figure(figsize=(8, 6), dpi=dpi)
             plt.plot(x, y, 'bo', label='raw data')
             plt.plot(x, out.init_fit, 'k--', label='initial fit')
             plt.plot(x, out.best_fit, 'r-', label='best fit')
@@ -412,9 +415,9 @@ class KineticData:
                 plt.title("Initial slope for kinetic " + self.name)
             plt.show()
         
-        return slope      
+        return slope, slopeerr
 
-    def plotAroundPoint(self, time, width = 50):
+    def plotAroundPoint(self, time, width = 50, dpi=100):
         #show data around some point to check if this is true t_on or t_off (alignment)
         start_index = np.argmin(np.abs(time-width-self.data_t))
         end_index = np.argmin(np.abs(time+width-self.data_t))
@@ -422,7 +425,7 @@ class KineticData:
         x = self.data_t[start_index:end_index+1]
         y = self.data_a[start_index:end_index+1]
 
-        plt.figure(dpi=100)
+        plt.figure(figsize=(8, 6), dpi=dpi)
         plt.plot(x, y, 'ro--')
         plt.xlim(time-width/2,time+width/2)
         plt.xlabel("Time")
@@ -460,6 +463,9 @@ class KineticData:
         #plt.show()        
         
         return residuals
+    
+    def smooth(self, window_length = 3*3, polyorder = 3):
+        self.data_a = savgol_filter(self.data_a, window_length, polyorder)
      
     def linearBaselineCorrect(self, exp_no): 
         #it is made to correct roughly data done without reference. 
@@ -591,7 +597,8 @@ class Experiment:
     def plotYourself(self, num = None, dpi=100, 
                      x_min = None, x_max = None, y_min = None, y_max = None,
                      zero_at = None, xlabel = "Time", ylabel = "Signal", 
-                     labeling = None, intensity_scale = None):
+                     labeling = None, intensity_scale = None,
+                     loc="best"):
         tmp_data = copy.deepcopy(self.all_data)
         
         if(zero_at is not None):
@@ -615,7 +622,7 @@ class Experiment:
         else:
             plt.plot(tmp_data[num].data_t, tmp_data[num].data_a, "-", label=labels[num])
                 
-        plt.legend(shadow=False, frameon=True, prop={'size': 16}, labelspacing=0.1)
+        plt.legend(shadow=False, frameon=True, prop={'size': 16}, labelspacing=0.1, loc=loc)
         plt.xlabel(xlabel, fontdict={'size': 16})
         plt.ylabel(ylabel, fontdict={'size': 16})
         plt.grid(True, which="major", linestyle='--')
@@ -720,7 +727,7 @@ class Experiment:
         self.last_chisqr = out.chisqr
         return out.params
 
-    def fitExpOptimizePlot(self, params):
+    def fitExpOptimizePlot(self, params, dpi=100):
         p = params.valuesdict()
         nexp = int(p["nexp"])
         
@@ -736,7 +743,7 @@ class Experiment:
             t0 = p["t0_"+str(kinetic_no)]
             y_model = self.multipleGaussExp(self.all_data[kinetic_no].data_t[index_min:index_max+1], t0, As, Taus, 0.0)  
     
-            plt.figure(dpi=100)
+            plt.figure(figsize=(8, 6), dpi=dpi)
             plt.plot(self.all_data[kinetic_no].data_t, self.all_data[kinetic_no].data_a, 'bo')
             plt.plot(self.all_data[kinetic_no].data_t[index_min:index_max+1], y_model, 'r-')
             plt.xlabel("Time")

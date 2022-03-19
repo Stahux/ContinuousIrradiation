@@ -1144,6 +1144,7 @@ class Model:
             plt.title(title, loc="left", fontsize=16)
         plt.xlabel("Time (s)", fontdict={'size': 16})
         plt.ylabel("\u0394A or A", fontdict={'size': 16})
+        plt.grid(True, which="major", linestyle='--')
         plt.xticks(fontsize=12)
         plt.yticks(fontsize=12)        
         plt.tick_params(which='both', direction="in", bottom=True, top=True, left=True, right=True, labelsize=14)
