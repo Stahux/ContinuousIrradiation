@@ -137,11 +137,15 @@ class ModProcess:
         a_p1p2 = float(self.p2.y() - self.p1.y()) / float(self.p2.x() - self.p1.x())
         b_p1p2 = float(self.p1.y()) - a_p1p2 * float(self.p1.x())
         
-        a_point = -1 / a_p1p2 #find linear eq for point which is perpendicular to p1p2
-        b_point = float(point.y()) - a_point * float(point.x())
-        
-        x_cross = (b_point - b_p1p2) / (a_p1p2 - a_point) #find crossing point
-        y_cross = a_p1p2 * x_cross + b_p1p2
+        if(a_p1p2 != 0):
+            a_point = -1 / a_p1p2 #find linear eq for point which is perpendicular to p1p2
+            b_point = float(point.y()) - a_point * float(point.x())
+            
+            x_cross = (b_point - b_p1p2) / (a_p1p2 - a_point) #find crossing point
+            y_cross = a_p1p2 * x_cross + b_p1p2
+        else: #arrow is horizontal!
+            x_cross = float(point.x())
+            y_cross = float(self.p1.y())
         
         if(self.p1.x() >= self.p2.x()): #check if crossing point is between p1 and p2
             if(x_cross <= self.p1.x() and x_cross >= self.p2.x()):
