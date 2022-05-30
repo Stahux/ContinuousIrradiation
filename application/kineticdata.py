@@ -403,16 +403,16 @@ class KineticData:
         
         if(plot):
             plt.figure(figsize=(8, 6), dpi=dpi)
-            plt.plot(x, y, 'bo', label='raw data')
-            plt.plot(x, out.init_fit, 'k--', label='initial fit')
-            plt.plot(x, out.best_fit, 'r-', label='best fit')
+            plt.plot(x-self.t_on, y, 'bo', label='raw data')
+            #plt.plot(x, out.init_fit, 'k--', label='initial fit')
+            plt.plot(x-self.t_on, out.best_fit, 'r-', label='best fit')
             plt.legend(loc='best')
-            plt.xlabel("Time")
-            plt.ylabel("Signal")
+            plt.xlabel("Time (s)", fontdict={'size': 14})
+            plt.ylabel("A", fontdict={'size': 14})
             plt.grid(True, which="major", linestyle='--')
             plt.figtext(0.6, 0.15, "slope = " + "{:.2e}".format(slope), fontdict={'size': 12})
             if(type(self.name) is str):
-                plt.title("Initial slope for kinetic " + self.name)
+                plt.title("Initial slope for kinetic " + self.name + "\n")
             plt.show()
         
         return slope, slopeerr

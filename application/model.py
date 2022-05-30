@@ -19,6 +19,7 @@ from PyQt5.QtWidgets import QApplication, QWidget
 from PyQt5 import QtCore, QtGui, QtWidgets, Qt
 from kineticdata import Experiment
 from modfit import MParameter, MParameters
+from spectrumdata import SpectrumData
 
 #firstly create populations and put them i model
 #then add arrows. Create arrow binded by two populations and add to model list
@@ -64,8 +65,23 @@ class ModPopulation:
             if( ( arr.source is self and arr.target is second_population ) or 
                ( arr.source is second_population and arr.target is self ) ):
                 arrows += 1
-        return arrows        
-
+        return arrows      
+    
+    def loadEps(self, spectrum): #eats SpectrumData to establish epsilons
+        #warning note that it discards old epsilons!
+        new_dict = dict()
+        for wav in range(len(spectrum.w)):
+            new_dict[spectrum.w[wav]] = spectrum.a[wav]
+        self.epsilon = new_dict        
+        #TODO: in future just embed the SpectrumData obj in this obj - simplicity fool!
+        
+    def __getitem__(self, i):
+        try:
+            return self.epsilon[i]
+        except:
+            raise IndexError("Epsilon exactly at: " + str(i) + " not found!")
+        
+        
 class ModProcess:
     def __init__(self, new_name, pop_source, pop_target):
         #firstly check how many parallel arrows already there
