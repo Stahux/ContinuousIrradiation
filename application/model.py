@@ -1023,25 +1023,30 @@ class Model:
         #update model with new params if they were obtained from fit
         # population_num = None will calculate absorbances, but you can give
         #population number to get concentration trace of this population
+        #if data have specified concentration, then it is used instead of absorbance
         initial_conditions = list()
-        #there was major mistake, i corrected, but better check again, 
-        #because error was really stupid and its late now...
         if(self.psplit == False):
-            weighted_epsilons = [(elem.epsilon[data.irradiation] * elem.initial) \
-                                 for elem in self.populations]
-            cfactor = data.absorbance/(data.irradiation_length * sum(weighted_epsilons))
+            if(data.absorbance is not None): #use initial absorbance
+                weighted_epsilons = [(elem.epsilon[data.irradiation] * elem.initial) \
+                                     for elem in self.populations]
+                ctotal = data.absorbance/(data.irradiation_length * sum(weighted_epsilons))
+            if(data.concentration is not None): #use initial concentration
+                ctotal = data.concentration
             #create initial conditions, initialize all population in the 
             #ground state, if cannot find (or more than 1), raise error
             for elem in self.populations:
-                initial_conditions.append(elem.initial * cfactor)
+                initial_conditions.append(elem.initial * ctotal)
         else:
-            weighted_epsilons = [(elem.epsilon[data.irradiation] * elem.initial[data.num]) \
-                                 for elem in self.populations]
-            cfactor = data.absorbance/(data.irradiation_length * sum(weighted_epsilons))            
+            if(data.absorbance is not None): #use initial absorbance
+                weighted_epsilons = [(elem.epsilon[data.irradiation] * elem.initial[data.num]) \
+                                     for elem in self.populations]
+                ctotal = data.absorbance/(data.irradiation_length * sum(weighted_epsilons))     
+            if(data.concentration is not None): #use initial concentration
+                ctotal = data.concentration
             #create initial conditions, initialize all population in the
             #ground state, if cannot find (or more than 1), raise error
             for elem in self.populations: 
-                initial_conditions.append(elem.initial[data.num] * cfactor)  
+                initial_conditions.append(elem.initial[data.num] * ctotal)  
 
         splitpoint1 = -1
         for i in range(len(data.data_t)-1): #split data between on and off light regime

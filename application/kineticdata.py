@@ -30,8 +30,10 @@ class LightEvent:
 class KineticData:
     #irr and probe lengths in cm.
     #absorbance is defined at irradiation wavelength and length
+    #one can specify absorbance (at irr), or concentration (at beginning in M)
     def __init__(self, filename, probe, irradiation, intensity = 0.0, 
-                 absorbance = 0.0, t_on = None, t_off = None, probe_length = 1, 
+                 absorbance = None, concentration = None,
+                 t_on = None, t_off = None, probe_length = 1, 
                  irradiation_length = 1, num = None, zeroed = False, src = None, 
                  skip_header = 0, skip_footer = 0, temperature = None, name = None):    
         if(src is None):
@@ -74,8 +76,20 @@ class KineticData:
         self.irradiation = irradiation
         self.intensity = intensity
         self.temperature = temperature
-        #lets say for now that it is absorbance at irradiation wavelength in the ground state
-        self.absorbance = absorbance 
+        
+        if(absorbance is not None):
+            #lets say for now that it is absorbance at irradiation wavelength in the ground state
+            self.absorbance = absorbance
+            self.concentration = None
+        if(concentration is not None):
+            #at the beginning, in M
+            self.concentration = concentration
+            self.absorbance = None
+        if(concentration is not None and absorbance is not None):
+            raise Exception("Concentration and absorbance cannot be defined both in the same time.")
+        if(concentration is None and absorbance is None):
+            raise Exception("Specify concentration OR absorbance.")
+        
         if(t_on is None):
             self.t_on = self.data_t[0]
         else:
@@ -130,7 +144,10 @@ class KineticData:
         params.add(MParameter(numstring+"t_off", value=self.t_off, vary=False))
         params.add(MParameter(numstring+"probe_length", value=self.probe_length, vary=False, min=0))
         params.add(MParameter(numstring+"irradiation_length", value=self.irradiation_length, vary=False, min=0)) 
-        params.add(MParameter(numstring+"absorbance", value=self.absorbance, vary=False, min=0))
+        if(self.absorbance is not None):
+            params.add(MParameter(numstring+"absorbance", value=self.absorbance, vary=False, min=0))
+        if(self.concentration is not None):
+            params.add(MParameter(numstring+"concentration", value=self.concentration, vary=False, min=0))
         params.add(MParameter(numstring+"temperature", value=self.temperature, vary=False, min=0)) 
         return params
     
@@ -146,7 +163,14 @@ class KineticData:
         self.t_off = p[numstring+"t_off"]
         self.probe_length = p[numstring+"probe_length"]
         self.irradiation_length = p[numstring+"irradiation_length"]
-        self.absorbance = p[numstring+"absorbance"]
+        if(numstring+"absorbance" in p):
+            self.absorbance = p[numstring+"absorbance"]
+            self.concentration = None
+        elif(numstring+"concentration" in p):
+            self.concentration = p[numstring+"concentration"]
+            self.absorbance = None
+        else:
+            raise Exception("Faulty params, no concentraion or absorbance is defined!")
         self.temperature = p[numstring+"temperature"]
 
     #simple exp fitting funcs
