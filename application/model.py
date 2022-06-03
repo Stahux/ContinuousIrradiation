@@ -1159,16 +1159,26 @@ class Model:
                 plt.plot(tmplist[i].data_t, tmplist[i].data_a, 
                          colors[i]+"-", label = labels[i])
             plt.legend(fontsize="x-small", shadow=False, frameon=True, prop={'size': 16}, labelspacing=0.1)
+            
+            if(experiment.all_data[0].zeroed):
+                plt.ylabel("\u0394A", fontdict={'size': 16})
+            else:
+                plt.ylabel("A", fontdict={'size': 16})
+            
         else:
-            if(num < len(experiment.all_data)): # and num < tmp.count #dokoncz!!!!!!!!!!!!
+            if(num < len(experiment.all_data)): # and num < tmp.count #dokoncz!
                 tmp = self.solveModelSingle(experiment.all_data[num])
                 plt.plot(experiment.all_data[num].data_t, experiment.all_data[num].data_a, "bo")
                 plt.plot(tmp.data_t, tmp.data_a, "r-")
         
+            if(experiment.all_data[num].zeroed):
+                plt.ylabel("\u0394A", fontdict={'size': 16})
+            else:
+                plt.ylabel("A", fontdict={'size': 16})
+        
         if(title is not None):
             plt.title(title, loc="left", fontsize=16)
         plt.xlabel("Time (s)", fontdict={'size': 16})
-        plt.ylabel("\u0394A or A", fontdict={'size': 16})
         plt.grid(True, which="major", linestyle='--')
         plt.xticks(fontsize=12)
         plt.yticks(fontsize=12)        
