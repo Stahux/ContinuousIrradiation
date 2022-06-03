@@ -522,8 +522,9 @@ class KineticData:
     def __getitem__(self, t): #return value at time in a portable
         return self.data_a[np.argmin(np.abs(self.data_t - t))]
         
-    def zeroAt(self, t):
+    def zeroAt(self, t): #zero data at and mark it is zeroed
         self.data_a -= self[t]   
+        self.zeroed = True
         
     def maximum(self):
         return self.data_t[np.argmax(self.data_a)]
@@ -583,9 +584,16 @@ class KineticData:
             
 class Experiment: 
     #container for kineticdata or other future data types prepared to fit globally
-    def __init__(self):
+    def __init__(self, kineticdata = None):
         self.all_data = list()
         #self.count = 0
+        if(type(kineticdata) is list): #if it is list of KineticData
+            for x in kineticdata:
+                self.all_data.append(copy.deepcopy(x))
+            self._renumber()
+        elif(kineticdata is not None): #if it is single KineticData
+            self.all_data.append(copy.deepcopy(kineticdata))
+            self._renumber()            
         
     def loadKineticData(self, *args, **kwargs):
         newdata = KineticData(*args, num = len(self.all_data), **kwargs)

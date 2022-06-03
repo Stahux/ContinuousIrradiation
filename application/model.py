@@ -1109,7 +1109,7 @@ class Model:
             
         output_data = copy.deepcopy(data)    
         abs_out = np.array(abs_out)
-        if(data.zeroed):
+        if(data.zeroed and population_num is None):
             abs_out = abs_out - abs_out[0]
         
         output_data.data_a = abs_out
