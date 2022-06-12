@@ -10,6 +10,7 @@ from kineticdata import KineticData, Experiment
 from modfit import ModFit
 import copy
 import lmfit
+import matplotlib.pyplot as plt
 
 
 model1 = Model.load('model_ABC_singlephoton_eyring.model')
@@ -87,36 +88,68 @@ def fitModel():
     avogadro = 6.022140857E+023
     mw_to_intensity = ((1*1.5)/(3.14*(1/2)**2))*1000/(1*1.5*1*mJ_per_hv*avogadro)
     
-    params1.add("mw_to_intensity", vary = False, value = mw_to_intensity)
+    params1['_0_intensity'].set(value=mw_to_intensity * 3.2, vary = True)
+    params1['_1_intensity'].set(value=mw_to_intensity * 3.2, vary = True)
+    params1['_2_intensity'].set(value=mw_to_intensity * 10, vary = True)
+    params1['_3_intensity'].set(value=mw_to_intensity * 1, vary = True)
+    params1['_4_intensity'].set(value=mw_to_intensity * 3.2, vary = True)
+    params1['_5_intensity'].set(value=mw_to_intensity * 3.2, vary = True)
+    params1['_6_intensity'].set(value=mw_to_intensity * 3.2, vary = True)
+    params1['_7_intensity'].set(value=mw_to_intensity * 3.2, vary = True)
+    params1['_8_intensity'].set(value=mw_to_intensity * 3.2, vary = True)
+    params1['_9_intensity'].set(value=mw_to_intensity * 3.2, vary = True) 
     
-    #relations between irradiation powers are known
-    params1['_0_intensity'].set(expr="mw_to_intensity * 3.2")
-    params1['_1_intensity'].set(expr="mw_to_intensity * 3.2")
-    params1['_2_intensity'].set(expr="mw_to_intensity * 10")
-    params1['_3_intensity'].set(expr="mw_to_intensity * 1")
-    params1['_4_intensity'].set(expr="mw_to_intensity * 3.2")
-    params1['_5_intensity'].set(expr="mw_to_intensity * 3.2")
-    params1['_6_intensity'].set(expr="mw_to_intensity * 3.2")
-    params1['_7_intensity'].set(expr="mw_to_intensity * 3.2")
-    params1['_8_intensity'].set(expr="mw_to_intensity * 3.2")
-    params1['_9_intensity'].set(expr="mw_to_intensity * 3.2") 
+    """
+    #set uncertainty
+    params1['A__365_0'].set(vary=True)
+    params1['B__365_0'].set(vary=True)
+    params1['B__430_0'].set(vary=True)
+    params1['C__365_0'].set(vary=True)
+    params1['C__430_0'].set(vary=True)
+    params1['A__365_0'].penalty_std = params1['A__365_0'].value/60
+    params1['B__365_0'].penalty_std = params1['B__365_0'].value/30
+    params1['B__430_0'].penalty_std = params1['B__430_0'].value/30
+    params1['C__365_0'].penalty_std = params1['C__365_0'].value/30
+    params1['C__430_0'].penalty_std = params1['C__430_0'].value/30
+    params1['A__365_0'].penalty_weight = 10
+    params1['B__365_0'].penalty_weight = 10
+    params1['B__430_0'].penalty_weight = 10
+    params1['C__365_0'].penalty_weight = 10
+    params1['C__430_0'].penalty_weight = 10
+    """
+    
+    for i in range(10):
+       params1['_'+str(i)+'_intensity'].penalty_std = 3.8868e-06/10
+       params1['_'+str(i)+'_intensity'].penalty_weight = 5
+       #params1['_'+str(i)+'_temperature'].set(vary = True) 
+       #params1['_'+str(i)+'_temperature'].penalty_std = 0.1
+       #params1['_'+str(i)+'_temperature'].penalty_weight = 10       
 
     params1.pretty_print()
     
     modfit1 = ModFit(model1, experiment1, params1)
-    out1 = modfit1.fit(maxfev = 10000)
-    params2 = out1.params    
+    out1 = modfit1.fit(method="Nelder")
+    params2 = out1.params 
     
-    experiment1.updateParameters(params2)
-    model1.updateParameters(params2)
+    modfit2 = ModFit(model1, experiment1, params2)
+    out2 = modfit2.fit()
+    params3 = out2.params     
+    
+    experiment1.updateParameters(params3)
+    model1.updateParameters(params3)
     
     for i in range(10):
         model1.plotYourself(experiment1, i, x_max=200)
     model1.plotYourself(experiment1, x_max=200)
     
-    lmfit.report_fit(params2)    
+    modfit2.reportFit(out2)    
     
-fitModel()
+    #ci = lmfit.conf_interval(modfit1, out1)
+    #lmfit.printfuncs.report_ci(ci)
+    
+    return out2, modfit2
+    
+output, minimizer = fitModel()
 
 
 
