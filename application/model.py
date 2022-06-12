@@ -999,6 +999,7 @@ class Model:
                 if(arr.type == "k"):
                     cont *= arr.k
                 elif(arr.type == "kd"):
+                    raise Exception("Code not tested yet! Do not use this feaure!")
                     #second order, so multiply by c second time
                     cont = cont*np.abs(cont)
                     cont *= arr.k
