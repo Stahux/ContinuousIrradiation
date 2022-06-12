@@ -2,14 +2,14 @@
 # -*- coding: utf-8 -*-
 
 ###########################################
-#this code is used to simulate "action spectrum" for two photon and signle photon OCP model
+#this code is used to simulate "action spectrum" for two photon and single photon OCP model
 #"action spectrum" refers to the paper of Rakhimberdieva et al. FEBS Letters 574, 2004
 #where authors irradiated cyanobacteria solution with variable light and subsequently
 #measured fluorescence of the phocobilisomes, induced by another light source to excite PBS
-#so the spectrum is constructed as a strength of PBS fluorescence quenching vs eavelength of 
+#so the spectrum is constructed as a strength of PBS fluorescence quenching vs wavelength of 
 #light used to irradiate the sample (not PBS)
-#the conctructed spectrum orginally resembled OCP stationary absorption spectrum
-#simulation is done to ivestigate effect of used model on the shape of action spectrum
+#the constructed spectrum originally resembled OCP stationary absorption spectrum
+#simulation is done to investigate effect of used model on the shape of action spectrum
 #
 #in this simulation only OCP is present, and we used approximation that quenching is
 #proportional to amount of OCP accumulated at 10s
@@ -55,19 +55,19 @@ def buildModel(modelname):
 
 
 #load epsilon spectra of OCPO and OCPR
-OCPO_Ctag_spectrum = SpectrumData("OCPO_Ctag_spectrum.txt")
-OCPR_Ctag_spectrum = SpectrumData("OCPR_Ctag_spectrum.txt")
+OCPO_Ctag_epsilons = SpectrumData("OCPO_Ctag_epsilons.txt")
+OCPR_Ctag_epsilons = SpectrumData("OCPR_Ctag_epsilons.txt")
 
 #load models
 test0 = Model.load(modelname) #simple A->B model
 test1 = Model.load(model2name) # A->B->C->A 2 photon model
 
-test0["OCPR"].loadEps(OCPR_Ctag_spectrum)
-test0["OCPO"].loadEps(OCPO_Ctag_spectrum)
+test0["OCPR"].loadEps(OCPR_Ctag_epsilons)
+test0["OCPO"].loadEps(OCPO_Ctag_epsilons)
 
-test1["OCPR"].loadEps(OCPR_Ctag_spectrum)
-test1["OCPI"].loadEps(OCPR_Ctag_spectrum)
-test1["OCPO"].loadEps(OCPO_Ctag_spectrum)
+test1["OCPR"].loadEps(OCPR_Ctag_epsilons)
+test1["OCPI"].loadEps(OCPR_Ctag_epsilons)
+test1["OCPO"].loadEps(OCPO_Ctag_epsilons)
 
 #construct empty datasets to fill with simulations
 #low concentration is assumed
@@ -210,7 +210,7 @@ fig, ax = plt.subplots(figsize=(8, 6), dpi=100)
 ax.plot(wavelengths_1pmodel, 2*signals_1pmodel/0.0013, "co-", label = "single h\u03BD model")
 ax.plot(wavelengths_2pmodel, 2*signals_2pmodel/0.00122, "mo-", label = "two h\u03BD model, \u03c6\u2082=1.0")
 ax.plot(wavelengths_2pmodel_2, 10.2*signals_2pmodel_2/0.0012, "ro-", label = "two h\u03BD model, \u03c6\u2082=0.1")
-ax.plot(OCPO_Ctag_spectrum.w, OCPO_Ctag_spectrum.a/50000000/0.00125, "b-", label = "stationary spectrum")
+ax.plot(OCPO_Ctag_epsilons.w, OCPO_Ctag_epsilons.a/50000000/0.00125, "b-", label = "stationary spectrum")
 ax.legend(shadow=False, frameon=True, prop={'size': 14}, labelspacing=0.1, loc="upper right")
 ax.set_xlabel("Irradiation wavelength (nm)", fontdict={'size': 16})
 ax.set_ylabel("Normalized action spectrum", fontdict={'size': 16})

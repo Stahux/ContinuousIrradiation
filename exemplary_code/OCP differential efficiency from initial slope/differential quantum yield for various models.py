@@ -170,8 +170,8 @@ for x in simulation_double_photon_1:
     
 #now i can load epsilons like that! so cool!
 from spectrumdata import SpectrumData
-OCPO_Ctag_spectrum = SpectrumData("OCPO_Ctag_spectrum.txt")
-OCPR_Ctag_spectrum = SpectrumData("OCPR_Ctag_spectrum.txt")    
+OCPO_Ctag_epsilons = SpectrumData("OCPO_Ctag_epsilons.txt")
+OCPR_Ctag_epsilons = SpectrumData("OCPR_Ctag_epsilons.txt")    
     
 #SIMULATE DATA WITH 2nd photon speedup model
 test8 = Model.load(model8name) # 2nd photon model whith speedup    
@@ -181,9 +181,9 @@ test8.setInitial("OCPI",0)
 test8.setInitial("OCPR",0)
 
 #load all epsilons from spectrum file
-test8["OCPO"].loadEps(OCPO_Ctag_spectrum)
-test8["OCPI"].loadEps(OCPR_Ctag_spectrum)
-test8["OCPR"].loadEps(OCPR_Ctag_spectrum)
+test8["OCPO"].loadEps(OCPO_Ctag_epsilons)
+test8["OCPI"].loadEps(OCPR_Ctag_epsilons)
+test8["OCPR"].loadEps(OCPR_Ctag_epsilons)
 
 params8 = data8.genParameters() + test8.genParameters()
 
@@ -228,9 +228,9 @@ test4.setInitial("OCPI",0)
 test4.setInitial("OCPR",0)
 
 #load all epsilons from spectrum file
-test4["OCPO"].loadEps(OCPO_Ctag_spectrum)
-test4["OCPI"].loadEps(OCPO_Ctag_spectrum)
-test4["OCPR"].loadEps(OCPR_Ctag_spectrum)
+test4["OCPO"].loadEps(OCPO_Ctag_epsilons)
+test4["OCPI"].loadEps(OCPO_Ctag_epsilons)
+test4["OCPR"].loadEps(OCPR_Ctag_epsilons)
 
 params4 = data4.genParameters() + test4.genParameters()
 
@@ -274,9 +274,9 @@ test7.setInitial("OCPR",0)
 test7.setInitial("OCPOB",0)
 
 #load all epsilons from spectrum file
-test7["OCPO"].loadEps(OCPO_Ctag_spectrum)
-test7["OCPR"].loadEps(OCPR_Ctag_spectrum)
-test7["OCPOB"].loadEps(OCPO_Ctag_spectrum)
+test7["OCPO"].loadEps(OCPO_Ctag_epsilons)
+test7["OCPR"].loadEps(OCPR_Ctag_epsilons)
+test7["OCPOB"].loadEps(OCPO_Ctag_epsilons)
 
 params7 = data7.genParameters() + test7.genParameters()
 
@@ -323,10 +323,10 @@ test10.setInitial("OCPOI",0)
 test10.setInitial("OCPRI",0)
 
 #load all epsilons from spectrum file
-test10["OCPO"].loadEps(OCPO_Ctag_spectrum)
-test10["OCPR"].loadEps(OCPR_Ctag_spectrum)
-test10["OCPOI"].loadEps(OCPO_Ctag_spectrum)
-test10["OCPRI"].loadEps(OCPR_Ctag_spectrum)
+test10["OCPO"].loadEps(OCPO_Ctag_epsilons)
+test10["OCPR"].loadEps(OCPR_Ctag_epsilons)
+test10["OCPOI"].loadEps(OCPO_Ctag_epsilons)
+test10["OCPRI"].loadEps(OCPR_Ctag_epsilons)
 
 params10 = data10.genParameters() + test10.genParameters()
 
