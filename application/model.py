@@ -981,7 +981,12 @@ class Model:
     
     def _F(self, cs, irradiation, length):
         tA = self._totalA(cs, irradiation, length)
-        return (1 - np.exp(-2.30259 * tA)) / tA
+        if(tA == 0.0): #not elegant, but avoids div by zero
+            return 0.0    
+        else:
+            return (1 - np.exp(-2.30259 * tA)) / tA
+        #TODO! later reformulate eqs to avoid if sequence and
+        #compile equations to move these loops out of slow python code!
     
     def _derrivt(self, cs, t, irradiation, length, intensity):
         out = list()
