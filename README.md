@@ -1,8 +1,8 @@
 # ContinuousIrradiation
 
-This code has been created to simulate, fit and model the data obtained during irradiation by constant light source in stationary spectrometer. It allows to define the points where light has been switched off or modified, so model describing the system is still the same, but conditions changed.
+This code has been created to simulate, fit and model the data obtained during irradiation by constant light source in stationary spectrometer. It allows to define the points where light has been switched off or modified, so model describing the system is still the same, but conditions can change.
 
-Program has graphical module only to build the model of transitions between states and allows to fix and unfix almost any parameter during fitting process of the data, so everything can be perfectly tuned to get the best data description possible. Building model graphically allows to avoid mistakes common when the equations are written manually (especially for complex models).
+Program has graphical module only to build the model of transitions between states and allows to fix and unfix almost any parameter during fitting process of the data, so everything can be perfectly tuned to get the best data description possible. Building model graphically allows to avoid mistakes common when the equations are written manually (especially for complex models). Model Editor is called directly from the code, to create the desired diagram, which is ude later to generate differential equations and fit the data:
 
 ![graphical model designer](graphical_designer_screen.png)
 
