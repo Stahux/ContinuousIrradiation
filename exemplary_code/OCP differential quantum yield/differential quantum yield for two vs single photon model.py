@@ -3,7 +3,10 @@
 
 ###########################################
 #code used to simulate differential quantum yields
-#for OCP with single photon and two photon models (simpified toy models)
+#for OCP with single photon and two photon models 
+#these are toy models designed to demonstrate that
+#for two photon model the differential QY increases with photon flux density
+#but it stays constant for single photon model
 ###########################################
 
 
